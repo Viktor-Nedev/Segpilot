@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+segpilot.db
+compress_trace.jsonl
+.env
+*.egg-info/
