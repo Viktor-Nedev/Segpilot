@@ -139,7 +139,7 @@ python -m bench.intent_ab              # reproduce the headline result
 
 ## Findings contributed upstream
 
-Eight findings, each reproducible from this repo, are written up in
+Nine findings, each reproducible from this repo, are written up in
 [docs/findings.md](docs/findings.md) and filed upstream:
 
 1. Hosted GPU silently ignores `level` — and accepts `"BANANA"` with HTTP 200
@@ -150,6 +150,7 @@ Eight findings, each reproducible from this repo, are written up in
 6. Proxy hardcodes `/v1`, breaking Gemini/OpenRouter/Groq-style base URLs
 7. Documented `tools/view_trace.py` does not exist (we wrote one)
 8. `shadow_storage: "redis"` validates but is unimplemented → silent data loss
+9. The two `kind` classifiers disagree; the conversation-aware one mislabels every file read
 
 ## Credits
 

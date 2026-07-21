@@ -267,6 +267,62 @@ on content the model can still see referenced.
 
 ---
 
+## Finding 9 — The two kind classifiers disagree, and the conversation-aware one mislabels every file read
+
+**Severity: medium-high.** Directly degrades compression, because `kind` is one
+of only two parameters the hosted GPU honours.
+
+Paritok ships two ways to determine a segment's `kind`, and they return
+different answers for the same content:
+
+| Content | `classify_segment_kind` + `reclassify_tool_result` | `classify_kind_from_content` |
+|---|---|---|
+| raw source code | `log_output` | `file_read` |
+| line-numbered source (`cat -n` style) | `log_output` | `file_read` |
+| Claude Code's `"Here's the result of running \`cat -n\`…"` | `log_output` | `file_read` |
+
+The second column is the path `tag_messages` uses — the one the tagger's own
+docstring recommends: *"Use this from the middleware."* It is wrong on all three.
+
+**Root cause.** The `role == "tool"` branch of `classify_segment_kind` tests in
+this order:
+
+```
+1. "Traceback"/"FAILED"/"Error:" in content   -> log_output
+2. head starts with "/" "." "#!" or has "@@"  -> file_read
+3. head has more than 5 newlines              -> log_output   <-- everything lands here
+4. otherwise                                  -> tool_result
+```
+
+Any file read longer than five lines trips rule 3 before any code-shaped check.
+And because the function then returns `log_output` rather than `tool_result`,
+`reclassify_tool_result` short-circuits on its first line
+(`if kind != "tool_result": return kind`) — so its `file_read` rules, *including
+the explicit Claude Code `cat -n` rule written for exactly this case*, are
+unreachable in practice.
+
+**Impact.** `file_read` and `log_output` select different training system prompts
+(`system_prompts/file_read.txt` vs `other.txt`). Mislabelling source as log
+output means every file read in a conversation is compressed by the prompt tuned
+for logs.
+
+**Suggested fix:** reorder the branch so code-shaped content is tested before the
+newline-count heuristic, or have `classify_segment_kind` return `tool_result` for
+ambiguous multi-line content so `reclassify_tool_result` can do its job.
+
+**What we do instead.** SEGPILOT does not sniff content when it does not have to.
+The agent already told us which tool produced each result via `tool_call_id`, so
+we map tool identity → kind directly (`segpilot/policy/kind.py`) and fall back to
+`classify_kind_from_content` only for unrecognised tools. Tool identity is ground
+truth; sniffing is a guess made in its absence. Paritok already builds this exact
+linkage in `_build_tool_use_index` (`wrapper.py:327`) to recover a file path — it
+just never uses it for `kind`.
+
+Regression-tested in `tests/test_kind.py::test_we_disagree_with_tagger_on_file_reads`,
+which fails loudly if upstream changes this behaviour.
+
+---
+
 ## A correction to our own analysis
 
 Before measuring, we read `pipelines/compress.py` and concluded that stock
