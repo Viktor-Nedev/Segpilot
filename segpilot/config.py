@@ -130,9 +130,31 @@ class SegpilotConfig:
                 setattr(cfg, key, cls._merge(getattr(cfg, key), data[key]))
         return cfg
 
+    @staticmethod
+    def _load_dotenv(path: str | Path = ".env") -> None:
+        """Populate os.environ from a .env file, without overwriting real env vars.
+
+        Deliberately minimal (no python-dotenv dependency) and deliberately
+        non-overriding: an explicitly exported variable always beats the file,
+        which is what you want when switching keys for a one-off run.
+        """
+        p = Path(path)
+        if not p.exists():
+            return
+        for raw in p.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and value and key not in os.environ:
+                os.environ[key] = value
+
     @classmethod
     def load(cls, path: str | Path | None = None) -> "SegpilotConfig":
         """Load defaults, then YAML if present, then environment overrides."""
+        cls._load_dotenv()
         cfg = cls()
         if path is None and Path("segpilot.yaml").exists():
             path = "segpilot.yaml"

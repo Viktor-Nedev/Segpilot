@@ -108,26 +108,45 @@ using the content-only hash, since the original text genuinely is the same.
 
 ---
 
-## Finding 3 — The hosted endpoint serves unauthenticated requests
+## Finding 3 — The hosted endpoint does not validate API keys at all
 
 **Severity: medium (high for hackathon participants).**
 
-`POST https://www.paritok.com/api/compress` returns HTTP 200 and performs real
-compression with **no `Authorization` header at all**. We verified this before
-creating any API key.
+`POST https://www.paritok.com/api/compress` performs real compression regardless
+of what you send in `Authorization`. We tested four cases against the same
+payload:
 
-The risk is specific and easy to hit: the hackathon requires participants to
-submit the email tied to their API key *"to match your submission to your
-dashboard usage and verify Paritok is running through the hosted GPU server."*
-A participant who forgets to set `PARITOK_API_KEY` gets a fully working system,
-real compression, and **zero dashboard usage** — and only discovers it at
-submission time.
+| `Authorization` | Status | Response |
+|---|---|---|
+| `Bearer pk_live_…` (a real key) | 200 | `{compressed, gpu_available}` |
+| `Bearer pk_live_THIS_KEY_IS_NOT_REAL_000` | 200 | identical |
+| `Bearer not-even-a-key` | 200 | identical |
+| *(header absent)* | 200 | identical |
 
-SEGPILOT refuses to start without a key for exactly this reason
-(`segpilot/config.py`, `require_api_key`).
+All four returned byte-identical compressed output. The response body contains
+only `compressed` and `gpu_available` — **there is no field acknowledging
+attribution**, so a client has no programmatic way to confirm its usage is being
+recorded against an account.
 
-**Suggested fix:** require the key, or return an `unattributed: true` flag in the
-response so clients can warn.
+Two consequences:
+
+1. **For the hackathon specifically.** Participants must submit the email tied
+   to their API key *"to match your submission to your dashboard usage and
+   verify Paritok is running through the hosted GPU server."* Someone who
+   forgets to set `PARITOK_API_KEY`, or who has a typo in it, gets a fully
+   working system with real compression and **zero dashboard usage** — and
+   cannot detect this from the API. They find out at submission time.
+2. **Generally.** An open, unmetered inference endpoint is a cost and abuse
+   exposure for the team running the GPU.
+
+SEGPILOT refuses to start without a key (`segpilot/config.py`,
+`require_api_key`), but that only guards against an *absent* key — it cannot
+detect a wrong one, because the server does not say.
+
+**Suggested fix:** reject unknown keys with 401, or — if open access is
+intentional during the launch period — return `"attributed": true|false` in the
+response so clients can warn their users. The second is a two-line change and
+would have saved us a dashboard round-trip.
 
 ---
 
