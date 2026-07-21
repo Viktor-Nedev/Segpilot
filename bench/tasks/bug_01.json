@@ -1,0 +1,23 @@
+{
+  "id": "bug_01",
+  "title": "Refunds and fees increase the balance instead of reducing it",
+  "instruction": "The reconciliation tests in tests/test_reconcile.py are failing. Account acct-1 should reconcile to 115.00 but comes out as 185.00. Investigate the ledger package and fix the bug. Do not change the tests.",
+  "seed": {
+    "file": "ledger/reconcile.py",
+    "find": "        total += entry.signed_amount",
+    "replace": "        total += entry.amount"
+  },
+  "test_command": ["-m", "pytest", "tests/test_reconcile.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/reconcile.py",
+    "function": "reconcile_totals",
+    "why_multi_file": "The fix is one token, but knowing WHICH token requires reading entries.py, where the amount/signed_amount invariant is documented. The failing test alone does not reveal it.",
+    "must_appear": [
+      "signed_amount",
+      "reconcile_totals",
+      "ledger/reconcile.py",
+      "NEGATIVE_KINDS",
+      "LedgerEntry"
+    ]
+  }
+}

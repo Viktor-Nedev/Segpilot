@@ -1,0 +1,147 @@
+"""Task loading and sandboxed execution for the seeded-bug benchmark.
+
+Each task takes the clean `bench/project/` codebase, copies it to a scratch
+directory, applies a one-line seed that introduces the bug, and lets the agent
+work there. The repository itself is never mutated, so runs are independent and
+repeatable.
+
+Success is decided by pytest, not by an LLM judge.
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+
+BENCH_DIR = Path(__file__).parent
+PROJECT_DIR = BENCH_DIR / "project"
+TASKS_DIR = BENCH_DIR / "tasks"
+
+
+class TaskError(RuntimeError):
+    pass
+
+
+@dataclass
+class Task:
+    id: str
+    title: str
+    instruction: str
+    seed: dict
+    test_command: list[str]
+    ground_truth: dict
+
+    @property
+    def must_appear(self) -> list[str]:
+        """Strings that must survive compression for the task to be solvable.
+
+        Chosen from the ground truth, not discovered at runtime, so
+        task-relevant retention is an objective measure rather than something
+        we tuned after seeing results.
+        """
+        return list(self.ground_truth.get("must_appear", []))
+
+
+def load_task(task_id: str) -> Task:
+    path = TASKS_DIR / f"{task_id}.json"
+    if not path.exists():
+        available = sorted(p.stem for p in TASKS_DIR.glob("*.json"))
+        raise TaskError(f"unknown task {task_id!r}. Available: {available}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return Task(
+        id=data["id"],
+        title=data["title"],
+        instruction=data["instruction"],
+        seed=data["seed"],
+        test_command=data.get("test_command", ["-m", "pytest", "-q"]),
+        ground_truth=data.get("ground_truth", {}),
+    )
+
+
+def list_tasks() -> list[str]:
+    return sorted(p.stem for p in TASKS_DIR.glob("*.json"))
+
+
+def prepare_workdir(task: Task, *, parent: str | Path | None = None) -> Path:
+    """Copy the clean project to a scratch dir and introduce the bug."""
+    workdir = Path(tempfile.mkdtemp(prefix=f"segpilot_{task.id}_", dir=parent))
+    shutil.copytree(PROJECT_DIR, workdir, dirs_exist_ok=True)
+
+    target = workdir / task.seed["file"]
+    if not target.exists():
+        raise TaskError(f"seed target missing: {task.seed['file']}")
+    source = target.read_text(encoding="utf-8")
+    find = task.seed["find"]
+    if find not in source:
+        raise TaskError(
+            f"seed pattern not found in {task.seed['file']}. The project "
+            f"changed and the task needs updating.\nPattern: {find!r}"
+        )
+    if source.count(find) != 1:
+        raise TaskError(
+            f"seed pattern is ambiguous in {task.seed['file']} "
+            f"({source.count(find)} matches); make it more specific"
+        )
+    target.write_text(source.replace(find, task.seed["replace"]), encoding="utf-8")
+    return workdir
+
+
+def run_tests(workdir: Path, task: Task, *, timeout: float = 120.0) -> tuple[bool, str]:
+    """Run the task's tests. Returns (passed, combined output)."""
+    try:
+        proc = subprocess.run(
+            [sys.executable, *task.test_command],
+            cwd=str(workdir),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"TIMEOUT after {timeout}s"
+    output = (proc.stdout or "") + (proc.stderr or "")
+    return proc.returncode == 0, output
+
+
+def verify_task(task: Task) -> None:
+    """Sanity-check a task: clean project passes, seeded project fails.
+
+    A task whose seed does not actually break the tests would silently report
+    100% success for every arm and quietly poison the benchmark.
+    """
+    clean = Path(tempfile.mkdtemp(prefix=f"verify_clean_{task.id}_"))
+    try:
+        shutil.copytree(PROJECT_DIR, clean, dirs_exist_ok=True)
+        passed, out = run_tests(clean, task)
+        if not passed:
+            raise TaskError(f"{task.id}: clean project FAILS its own tests:\n{out[-800:]}")
+    finally:
+        shutil.rmtree(clean, ignore_errors=True)
+
+    seeded = prepare_workdir(task)
+    try:
+        passed, out = run_tests(seeded, task)
+        if passed:
+            raise TaskError(
+                f"{task.id}: seeded bug does NOT break the tests -- the task is a no-op"
+            )
+    finally:
+        shutil.rmtree(seeded, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    failures = 0
+    for task_id in list_tasks():
+        task = load_task(task_id)
+        try:
+            verify_task(task)
+            print(f"  OK    {task_id}  {task.title}")
+        except TaskError as exc:
+            failures += 1
+            print(f"  BROKEN {task_id}: {exc}")
+    print(f"\n{len(list_tasks()) - failures}/{len(list_tasks())} tasks valid")
+    sys.exit(1 if failures else 0)

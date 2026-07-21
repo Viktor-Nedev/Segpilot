@@ -137,12 +137,23 @@ class GeminiUpstream:
                 if not last.is_retryable:
                     raise last
 
-            # Exponential backoff. Free-tier rate limits are per-minute, so the
-            # later waits are deliberately long rather than tight.
             if attempt < self.max_retries - 1:
-                time.sleep(min(2 ** attempt * 2, 30))
+                time.sleep(self._backoff(last, attempt))
 
         raise last or UpstreamError("upstream failed")
+
+    @staticmethod
+    def _backoff(error: UpstreamError, attempt: int) -> float:
+        """How long to wait before retrying.
+
+        Rate limits on Gemini's free tier are enforced per MINUTE, so the usual
+        2/4/8-second exponential backoff exhausts all retries inside a single
+        window and gives up while still rate limited. A 429 therefore waits out
+        most of a minute; ordinary 5xx keeps the short exponential schedule.
+        """
+        if error.is_rate_limit:
+            return min(35.0 + 20.0 * attempt, 75.0)
+        return min(2.0 ** attempt * 2.0, 30.0)
 
     @staticmethod
     def _parse(data: dict, elapsed: float) -> UpstreamResult:
