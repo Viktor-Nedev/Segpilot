@@ -4,3 +4,6 @@ segpilot.db
 compress_trace.jsonl
 .env
 *.egg-info/
+segpilot_cache.db
+examples/sessions/*.jsonl
+.pytest_cache/
