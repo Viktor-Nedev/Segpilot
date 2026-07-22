@@ -17,6 +17,7 @@ Both are resumable: a session file that already exists is skipped unless
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -57,12 +58,42 @@ def _session_path(sessions_dir: str, task_id: str, arm: str) -> Path:
     return Path(sessions_dir) / f"{task_id}__{arm}.jsonl"
 
 
+def _session_health(path: Path) -> tuple[int, str]:
+    """(tool_result_count, stop_reason) for a written session, or (0, '') if
+    unreadable. Lets us tell a real run from one the rate limiter killed."""
+    if not path.exists():
+        return 0, ""
+    tool_results, stop_reason = 0, ""
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                row = json.loads(line)
+                if row.get("type") == "meta":
+                    stop_reason = row.get("result", {}).get("stop_reason", "")
+                elif row.get("type") == "messages":
+                    tool_results = sum(
+                        1 for m in row.get("messages", []) if m.get("role") == "tool"
+                    )
+    except (OSError, ValueError):
+        return 0, ""
+    return tool_results, stop_reason
+
+
 def record_one(task_id: str, arm: str, sessions_dir: str, *, force: bool,
                max_turns: int) -> str:
-    """Returns 'skipped' | 'solved' | 'unsolved' | 'error'."""
+    """Returns 'skipped' | 'solved' | 'unsolved' | 'ratelimited' | 'empty'.
+
+    A session that the rate limiter killed (upstream error, no tool results) is
+    deleted rather than kept, so a resumed run re-records it instead of skipping
+    an empty file. Only a session with real content counts as done.
+    """
     path = _session_path(sessions_dir, task_id, arm)
     if path.exists() and not force:
-        return "skipped"
+        tool_results, _ = _session_health(path)
+        if tool_results > 0:
+            return "skipped"          # genuinely done
+        path.unlink(missing_ok=True)  # empty leftover -> re-record
+
     try:
         rc = run_agent([
             "--task", task_id, "--arm", arm,
@@ -71,7 +102,17 @@ def record_one(task_id: str, arm: str, sessions_dir: str, *, force: bool,
         ])
     except Exception as exc:  # noqa: BLE001 — one bad task must not sink the batch
         print(f"    ! {task_id}/{arm}: {type(exc).__name__}: {exc}")
-        return "error"
+        return "empty"
+
+    tool_results, stop_reason = _session_health(path)
+    if "upstream_error" in stop_reason and tool_results == 0:
+        # Quota/rate wall: the run never really started. Drop the empty file so
+        # it re-records on the next run, and let the caller stop the batch.
+        path.unlink(missing_ok=True)
+        return "ratelimited"
+    if tool_results == 0:
+        path.unlink(missing_ok=True)
+        return "empty"
     return "solved" if rc == 0 else "unsolved"
 
 
@@ -108,24 +149,34 @@ def main(argv: list[str] | None = None) -> int:
     preflight_gpu_if_needed([arm for _, arm in plan])
 
     print(f"recording {len(plan)} session(s): {len(tasks)} task(s)")
-    counts = {"skipped": 0, "solved": 0, "unsolved": 0, "error": 0}
+    counts = {"skipped": 0, "solved": 0, "unsolved": 0, "ratelimited": 0, "empty": 0}
+    hit_wall = False
     for i, (task_id, arm) in enumerate(plan, 1):
         print(f"\n[{i}/{len(plan)}] {task_id} / {arm}")
         status = record_one(task_id, arm, args.sessions_dir,
                             force=args.force, max_turns=args.max_turns)
         counts[status] += 1
         print(f"    -> {status}")
+        if status == "ratelimited":
+            # The quota is spent; further runs would just burn time on retries.
+            # Everything recorded so far is kept; the rest re-records on resume.
+            hit_wall = True
+            print("\n  Rate limit hit. Stopping so we don't hammer a spent quota.")
+            print("  Re-run the same command later to resume the remaining tasks.")
+            break
         if status != "skipped" and i < len(plan):
             time.sleep(args.pause)   # spread calls out for the free tier
 
     print(f"\n{'=' * 50}")
     for k, v in counts.items():
-        print(f"  {k:<10} {v}")
+        print(f"  {k:<11} {v}")
     solved = counts["solved"]
     ran = counts["solved"] + counts["unsolved"]
     if ran:
         print(f"  solve rate {solved}/{ran} = {solved / ran:.0%}")
-    return 0
+    done = counts["skipped"] + counts["solved"] + counts["unsolved"]
+    print(f"  {done}/{len(plan)} sessions complete on disk")
+    return 2 if hit_wall else 0
 
 
 if __name__ == "__main__":
