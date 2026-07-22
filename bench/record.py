@@ -23,6 +23,34 @@ from pathlib import Path
 
 from agent.ruff import main as run_agent
 from bench.harness import list_tasks
+from segpilot.compressor import ARMS
+from segpilot.config import SegpilotConfig
+
+
+def preflight_gpu_if_needed(arms: list[str]) -> None:
+    """Refuse to record a compressing arm while the hosted GPU is unreachable.
+
+    GpuServerStrategy degrades to passthrough when `gpu_available` is false, so a
+    segpilot run recorded during an outage would silently contain no compression
+    -- a session mislabelled as compressed, quietly poisoning the benchmark. The
+    raw arm does not compress, so it is exempt.
+    """
+    needs_gpu = any(ARMS[a].compress for a in arms if a in ARMS)
+    if not needs_gpu:
+        return
+    from paritok.strategies.gpu_server import GpuServerStrategy
+
+    cfg = SegpilotConfig.load()
+    if cfg.paritok.require_api_key and not cfg.paritok.api_key:
+        raise SystemExit("PARITOK_API_KEY not set; compressing arms need it.")
+    available, message = GpuServerStrategy(cfg.to_paritok_config().gpu_server).check()
+    if not available:
+        raise SystemExit(
+            "Hosted GPU is not available -- refusing to record compressing arms, "
+            "because compression would silently pass through and the sessions "
+            f"would be mislabelled.\n  reason: {message}"
+        )
+    print(f"[preflight] hosted GPU OK: {message}")
 
 
 def _session_path(sessions_dir: str, task_id: str, arm: str) -> Path:
@@ -74,6 +102,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.live:
         for a in (x.strip() for x in args.arms.split(",") if x.strip()):
             plan += [(t, a) for t in tasks]
+
+    # Fail loud before spending any quota if a compressing arm is requested but
+    # the GPU cannot compress. Raw-only reference runs skip this.
+    preflight_gpu_if_needed([arm for _, arm in plan])
 
     print(f"recording {len(plan)} session(s): {len(tasks)} task(s)")
     counts = {"skipped": 0, "solved": 0, "unsolved": 0, "error": 0}
