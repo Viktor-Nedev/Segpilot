@@ -1,7 +1,5 @@
 """Compressor arm logic, exercised without touching the network."""
 
-import pytest
-
 from segpilot.compressor import ARMS, SegpilotCompressor
 from segpilot.config import SegpilotConfig
 
@@ -157,6 +155,24 @@ def test_guard_off_lets_destructive_compression_through():
     assert not any(s.guard_tripped for s in outcome.segments)
     assert outcome.saved_tokens > 0
     assert outcome.segments[1].retention < 0.5
+
+
+def test_raw_arm_never_calls_the_model():
+    """The reference-recording arm must not compress at all."""
+    outcome, fake = _run("raw")
+    assert fake.calls == []
+    assert outcome.saved_tokens == 0
+    assert all(s.skipped == "passthrough" for s in outcome.segments)
+    # kind/intent are still computed (recorded for later analysis) but unused.
+    assert [s.kind for s in outcome.segments] == [None, None]
+
+
+def test_raw_arm_leaves_content_byte_identical():
+    fake = FakeStrategy()
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=fake)
+    original = _session()
+    rewritten, _ = comp.apply(original, ARMS["raw"])
+    assert rewritten == original
 
 
 def test_apply_rewrites_only_compressed_segments():

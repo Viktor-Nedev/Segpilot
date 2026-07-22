@@ -60,6 +60,21 @@ def test_discrepancy_is_reported_with_delta():
     assert delta == Decimal("15.00")
 
 
+def test_discrepancy_reported_when_settlement_is_higher_than_ours():
+    """A negative delta (ours < theirs) must be flagged, not just a positive one.
+
+    Comparing the raw delta instead of its absolute value silently ignores every
+    case where the settlement provider thinks we are owed more than we recorded.
+    """
+    entries = build_entries(_records())
+    settlement = {"acct-1": "150.00", "acct-2": "210.00"}   # acct-1 ours=115
+    found = find_discrepancies(entries, settlement)
+    accounts = {row[0]: row for row in found}
+    assert "acct-1" in accounts
+    _, ours, theirs, delta = accounts["acct-1"]
+    assert delta == Decimal("-35.00")
+
+
 def test_missing_account_on_either_side_is_flagged():
     entries = build_entries(_records())
     found = find_discrepancies(entries, {"acct-1": "115.00", "acct-9": "42.00"})

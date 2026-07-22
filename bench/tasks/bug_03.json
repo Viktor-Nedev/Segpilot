@@ -1,0 +1,17 @@
+{
+  "id": "bug_03",
+  "title": "Basket taxes the pre-discount subtotal, overcharging the customer",
+  "instruction": "test_pricing.py::test_basket_applies_discount_before_tax is failing. The basket total is too high. Finance requires that the discount is applied to the subtotal first, and tax is applied to the discounted amount. Investigate price_basket in the ledger package and fix it. Do not change the tests. Run tests/test_pricing.py.",
+  "seed": {
+    "file": "ledger/pricing.py",
+    "find": "    total = apply_tax(discounted, jurisdiction)",
+    "replace": "    total = apply_tax(subtotal, jurisdiction)"
+  },
+  "test_command": ["-m", "pytest", "tests/test_pricing.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/pricing.py",
+    "function": "price_basket",
+    "why_multi_file": "Understanding the fix requires reading the documented order of operations in price_basket and how discounted/subtotal differ.",
+    "must_appear": ["price_basket", "apply_tax", "discounted", "subtotal", "discount"]
+  }
+}

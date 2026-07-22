@@ -1,0 +1,17 @@
+{
+  "id": "bug_06",
+  "title": "Reconciliation misses negative discrepancies",
+  "instruction": "test_reconcile.py is failing: a settlement amount that is HIGHER than our balance is not reported as a discrepancy, while a lower one is. Both directions should be flagged. Investigate find_discrepancies in the ledger package and fix it. Do not change the tests. Run tests/test_reconcile.py.",
+  "seed": {
+    "file": "ledger/reconcile.py",
+    "find": "        if abs(delta) > tolerance:",
+    "replace": "        if delta > tolerance:"
+  },
+  "test_command": ["-m", "pytest", "tests/test_reconcile.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/reconcile.py",
+    "function": "find_discrepancies",
+    "why_multi_file": "The fix needs the reader to see that delta = ours - theirs can be negative, which means reading how delta is computed a few lines above the comparison.",
+    "must_appear": ["find_discrepancies", "delta", "tolerance", "settlement"]
+  }
+}

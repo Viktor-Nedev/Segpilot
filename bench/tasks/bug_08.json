@@ -1,0 +1,17 @@
+{
+  "id": "bug_08",
+  "title": "Default jurisdiction is tax-free, silently undercharging",
+  "instruction": "test_entries.py::test_default_jurisdiction_is_taxed is failing. When no jurisdiction is given, baskets are charged no tax at all. The default jurisdiction should be US-CA. Fix the ledger package. Do not change the tests. Run tests/test_entries.py.",
+  "seed": {
+    "file": "ledger/pricing.py",
+    "find": "DEFAULT_JURISDICTION = \"US-CA\"",
+    "replace": "DEFAULT_JURISDICTION = \"US-OR\""
+  },
+  "test_command": ["-m", "pytest", "tests/test_entries.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/pricing.py",
+    "function": "DEFAULT_JURISDICTION",
+    "why_multi_file": "Deliberately shallow: a one-line constant with a short path to the fix. Included so the benchmark contains a case where compression has little to work with.",
+    "must_appear": ["DEFAULT_JURISDICTION", "US-CA"]
+  }
+}

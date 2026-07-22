@@ -1,0 +1,17 @@
+{
+  "id": "bug_07",
+  "title": "Money quantizes to a dime instead of a cent",
+  "instruction": "Many tests across tests/ are failing with amounts rounded to the wrong precision (e.g. 10.0 instead of 10.01). A single shared constant controls money rounding across the whole ledger package. Find where it is defined and used, and fix it. Do not change the tests. Run the full tests/ suite.",
+  "seed": {
+    "file": "ledger/entries.py",
+    "find": "CENTS = Decimal(\"0.01\")",
+    "replace": "CENTS = Decimal(\"0.1\")"
+  },
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "file": "ledger/entries.py",
+    "function": "CENTS",
+    "why_multi_file": "CENTS is defined in entries.py and imported by pricing.py and reconcile.py; locating it means searching the codebase (grep), which is exactly the tool_result-heavy path.",
+    "must_appear": ["CENTS", "Decimal", "quantize", "0.01"]
+  }
+}

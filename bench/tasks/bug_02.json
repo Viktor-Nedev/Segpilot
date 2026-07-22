@@ -1,0 +1,17 @@
+{
+  "id": "bug_02",
+  "title": "Discount tier boundary is exclusive, so orders exactly at a threshold get no discount",
+  "instruction": "test_pricing.py::test_discount_tier_boundary_is_inclusive is failing. An order whose subtotal equals a discount tier's threshold should receive that tier's discount, but it gets nothing. Find and fix the bug in the ledger package. Do not change the tests. Run tests/test_pricing.py to confirm.",
+  "seed": {
+    "file": "ledger/pricing.py",
+    "find": "            if subtotal >= threshold:",
+    "replace": "            if subtotal > threshold:"
+  },
+  "test_command": ["-m", "pytest", "tests/test_pricing.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/pricing.py",
+    "function": "DiscountPolicy.rate_for",
+    "why_multi_file": "Local boundary bug; the docstring on rate_for states tiers are inclusive ('meets or exceeds'), so reading the function is enough.",
+    "must_appear": ["rate_for", "threshold", "subtotal", "DiscountPolicy"]
+  }
+}

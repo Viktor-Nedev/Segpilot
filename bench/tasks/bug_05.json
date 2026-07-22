@@ -1,0 +1,17 @@
+{
+  "id": "bug_05",
+  "title": "Discount tiers are evaluated lowest-first, so large orders get the small discount",
+  "instruction": "test_pricing.py::test_discount_tiers_evaluate_highest_first is failing. When several discount tiers apply, the wrong one wins: a large order receives a lower tier's rate. Tiers must be evaluated from the highest threshold down. Fix the ledger package. Do not change the tests. Run tests/test_pricing.py.",
+  "seed": {
+    "file": "ledger/pricing.py",
+    "find": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=True)",
+    "replace": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=False)"
+  },
+  "test_command": ["-m", "pytest", "tests/test_pricing.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/pricing.py",
+    "function": "DiscountPolicy.__init__",
+    "why_multi_file": "Requires connecting __init__ (where tiers are sorted) to rate_for (which relies on that order and returns the first match), i.e. reading two methods.",
+    "must_appear": ["tiers", "sorted", "reverse", "rate_for", "DiscountPolicy"]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "bug_04",
+  "title": "parse_amount reintroduces binary float error",
+  "instruction": "test_entries.py::test_parse_amount_from_float_is_exact_to_cents is failing. Amounts parsed from float values carry binary rounding error, so 0.1 + 0.2 does not equal 0.3. Fix parse_amount in the ledger package so float amounts are parsed exactly. Do not change the tests. Run tests/test_entries.py.",
+  "seed": {
+    "file": "ledger/entries.py",
+    "find": "        return Decimal(str(raw))",
+    "replace": "        return Decimal(raw)"
+  },
+  "test_command": ["-m", "pytest", "tests/test_entries.py", "-q"],
+  "ground_truth": {
+    "file": "ledger/entries.py",
+    "function": "parse_amount",
+    "why_multi_file": "The fix is local, but the reasoning is in the parse_amount docstring, which explains why float must go through str.",
+    "must_appear": ["parse_amount", "Decimal", "float", "str"]
+  }
+}

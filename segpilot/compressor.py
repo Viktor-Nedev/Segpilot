@@ -43,15 +43,28 @@ class Arm:
     use_kind: bool
     use_intent: bool
     use_guard: bool = False
+    compress: bool = True   # False = passthrough; used to record neutral references
 
 
 ARMS: dict[str, Arm] = {
+    # Passthrough. Compression is off entirely, so an agent run under `raw` sees
+    # full context and chooses its trajectory on complete information. Reference
+    # sessions are recorded under this arm so the replayed comparison is not
+    # biased by having been produced under one of the arms being compared.
+    "raw":          Arm("raw",          use_kind=False, use_intent=False, compress=False),
     "stock":        Arm("stock",        use_kind=False, use_intent=False),
     "kind_only":    Arm("kind_only",    use_kind=True,  use_intent=False),
     "intent_only":  Arm("intent_only",  use_kind=False, use_intent=True),
     "segpilot":     Arm("segpilot",     use_kind=True,  use_intent=True),
     "segpilot+guard": Arm("segpilot+guard", use_kind=True, use_intent=True, use_guard=True),
 }
+
+# The arms that actually compress — the set the replay harness sweeps and the
+# report compares. `raw` is excluded because it is the recording substrate, not
+# a policy under test.
+COMPRESSING_ARMS: tuple[str, ...] = (
+    "stock", "kind_only", "intent_only", "segpilot", "segpilot+guard",
+)
 
 
 @dataclass
@@ -199,6 +212,21 @@ class SegpilotCompressor:
             original_tokens = count_tokens(content)
             kind, tool_name, file_path = self.decide_kind(msg, arm, tool_index)
             intent = self.decide_intent(messages, i, arm, tool_index)
+
+            # Passthrough arm: record the segment untouched. Used to record
+            # neutral reference trajectories, where the agent must see full,
+            # uncompressed context.
+            if not arm.compress:
+                outcome.segments.append(SegmentOutcome(
+                    index=i, kind=kind, intent=intent.text,
+                    intent_source=intent.source,
+                    original_tokens=original_tokens,
+                    compressed_tokens=original_tokens,
+                    retention=1.0, compressed=content,
+                    skipped="passthrough",
+                    tool_name=tool_name, file_path=file_path,
+                ))
+                continue
 
             # Not worth a GPU round-trip, and small segments are where
             # compression overhead most often exceeds the saving.
