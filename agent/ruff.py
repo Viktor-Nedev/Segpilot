@@ -254,6 +254,10 @@ def main(argv: list[str] | None = None) -> int:
     workdir = prepare_workdir(task)
     session_path = Path(args.sessions_dir) / f"{task.id}__{arm.name}.jsonl"
 
+    # A campaign chains several bugs, so it needs more turns to finish. Give it a
+    # floor of 40 unless the caller asked for more.
+    max_turns = max(args.max_turns, 40) if task.is_campaign else args.max_turns
+
     print(f"task    : {task.id} — {task.title}")
     print(f"arm     : {arm.name}  (kind={arm.use_kind} intent={arm.use_intent} guard={arm.use_guard})")
     print(f"workdir : {workdir}\n")
@@ -266,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             upstream=GeminiUpstream(cfg.upstream),
             session_path=session_path, verbose=not args.quiet,
         )
-        result = agent.run(max_turns=args.max_turns)
+        result = agent.run(max_turns=max_turns)
     finally:
         cache.close()
         if not args.keep_workdir:

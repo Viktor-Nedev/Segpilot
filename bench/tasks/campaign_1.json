@@ -1,0 +1,16 @@
+{
+  "id": "campaign_1",
+  "title": "Full-suite audit: three unrelated bugs across reconcile, pricing, and entries",
+  "instruction": "The ledger package has several failing tests across the whole suite. Run the tests, then fix every failure. The bugs are unrelated and live in different modules: one in reconciliation, one in basket pricing, and one in amount parsing. Work through them one at a time, reading the relevant module for each before editing. Do not change the tests. Run the full tests/ suite until everything passes.",
+  "seeds": [
+    {"file": "ledger/reconcile.py", "find": "        total += entry.signed_amount", "replace": "        total += entry.amount"},
+    {"file": "ledger/pricing.py", "find": "    total = apply_tax(discounted, jurisdiction)", "replace": "    total = apply_tax(subtotal, jurisdiction)"},
+    {"file": "ledger/entries.py", "find": "        return Decimal(str(raw))", "replace": "        return Decimal(raw)"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/reconcile.py", "ledger/pricing.py", "ledger/entries.py"],
+    "why_drift": "Three bugs in three modules solved in one session. By the time the agent works the parsing bug, the reconciliation context it read first is stale -- exactly the drift intent routing should prune while stock keeps steering by the original multi-part instruction.",
+    "must_appear": ["signed_amount", "reconcile_totals", "NEGATIVE_KINDS", "price_basket", "apply_tax", "discounted", "parse_amount"]
+  }
+}

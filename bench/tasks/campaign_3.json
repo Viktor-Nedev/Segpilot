@@ -1,0 +1,16 @@
+{
+  "id": "campaign_3",
+  "title": "Full-suite audit: discount boundary, default jurisdiction, and reconciliation sign",
+  "instruction": "Several ledger tests are failing. Fix all of them. One bug makes orders exactly at a discount threshold miss the discount; one makes the default tax jurisdiction tax-free; and one makes refunds and fees increase the reconciled balance instead of reducing it. Read the relevant modules before editing. Do not change the tests. Run the full tests/ suite until everything passes.",
+  "seeds": [
+    {"file": "ledger/pricing.py", "find": "            if subtotal >= threshold:", "replace": "            if subtotal > threshold:"},
+    {"file": "ledger/pricing.py", "find": "DEFAULT_JURISDICTION = \"US-CA\"", "replace": "DEFAULT_JURISDICTION = \"US-OR\""},
+    {"file": "ledger/reconcile.py", "find": "        total += entry.signed_amount", "replace": "        total += entry.amount"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/pricing.py", "ledger/reconcile.py"],
+    "why_drift": "Two of the three bugs share a file (pricing) but are unrelated; the agent fixes one, moves to reconciliation, then must return -- the pricing context read early is stale by the time reconciliation is done.",
+    "must_appear": ["rate_for", "threshold", "DEFAULT_JURISDICTION", "US-CA", "signed_amount", "reconcile_totals", "NEGATIVE_KINDS"]
+  }
+}

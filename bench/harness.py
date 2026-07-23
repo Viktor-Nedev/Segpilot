@@ -32,9 +32,16 @@ class Task:
     id: str
     title: str
     instruction: str
-    seed: dict
+    seeds: list[dict]
     test_command: list[str]
     ground_truth: dict
+
+    @property
+    def is_campaign(self) -> bool:
+        """A campaign chains several bugs in one session, so the agent's context
+        drifts across sub-tasks -- the condition SEGPILOT's intent routing is
+        actually about. Single-bug tasks are short and do not drift."""
+        return len(self.seeds) > 1
 
     @property
     def must_appear(self) -> list[str]:
@@ -53,11 +60,16 @@ def load_task(task_id: str) -> Task:
         available = sorted(p.stem for p in TASKS_DIR.glob("*.json"))
         raise TaskError(f"unknown task {task_id!r}. Available: {available}")
     data = json.loads(path.read_text(encoding="utf-8"))
+    # A task carries either one `seed` (single-bug) or a list of `seeds`
+    # (campaign). Normalise to a list so the rest of the harness is uniform.
+    seeds = data.get("seeds") or ([data["seed"]] if "seed" in data else [])
+    if not seeds:
+        raise TaskError(f"{task_id}: task defines neither `seed` nor `seeds`")
     return Task(
         id=data["id"],
         title=data["title"],
         instruction=data["instruction"],
-        seed=data["seed"],
+        seeds=seeds,
         test_command=data.get("test_command", ["-m", "pytest", "-q"]),
         ground_truth=data.get("ground_truth", {}),
     )
@@ -67,27 +79,37 @@ def list_tasks() -> list[str]:
     return sorted(p.stem for p in TASKS_DIR.glob("*.json"))
 
 
-def prepare_workdir(task: Task, *, parent: str | Path | None = None) -> Path:
-    """Copy the clean project to a scratch dir and introduce the bug."""
-    workdir = Path(tempfile.mkdtemp(prefix=f"segpilot_{task.id}_", dir=parent))
-    shutil.copytree(PROJECT_DIR, workdir, dirs_exist_ok=True)
-
-    target = workdir / task.seed["file"]
+def _apply_seed(workdir: Path, seed: dict, task_id: str) -> None:
+    """Introduce one bug via an unambiguous find/replace."""
+    target = workdir / seed["file"]
     if not target.exists():
-        raise TaskError(f"seed target missing: {task.seed['file']}")
+        raise TaskError(f"{task_id}: seed target missing: {seed['file']}")
     source = target.read_text(encoding="utf-8")
-    find = task.seed["find"]
+    find = seed["find"]
     if find not in source:
         raise TaskError(
-            f"seed pattern not found in {task.seed['file']}. The project "
+            f"{task_id}: seed pattern not found in {seed['file']}. The project "
             f"changed and the task needs updating.\nPattern: {find!r}"
         )
     if source.count(find) != 1:
         raise TaskError(
-            f"seed pattern is ambiguous in {task.seed['file']} "
+            f"{task_id}: seed pattern is ambiguous in {seed['file']} "
             f"({source.count(find)} matches); make it more specific"
         )
-    target.write_text(source.replace(find, task.seed["replace"]), encoding="utf-8")
+    target.write_text(source.replace(find, seed["replace"]), encoding="utf-8")
+
+
+def prepare_workdir(task: Task, *, parent: str | Path | None = None) -> Path:
+    """Copy the clean project to a scratch dir and introduce every seeded bug.
+
+    For a campaign this applies several seeds, so the agent must work through
+    multiple bugs in one session -- that is what makes the context accumulate
+    and drift.
+    """
+    workdir = Path(tempfile.mkdtemp(prefix=f"segpilot_{task.id}_", dir=parent))
+    shutil.copytree(PROJECT_DIR, workdir, dirs_exist_ok=True)
+    for seed in task.seeds:
+        _apply_seed(workdir, seed, task.id)
     return workdir
 
 

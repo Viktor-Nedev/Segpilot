@@ -1,0 +1,16 @@
+{
+  "id": "campaign_2",
+  "title": "Full-suite audit: reconciliation sign, discount ordering, and money precision",
+  "instruction": "Multiple tests across the ledger suite are failing. Investigate and fix all of them. There is a reconciliation bug where some discrepancies go unreported, a pricing bug where discount tiers are applied in the wrong order, and a rounding bug affecting money precision across the whole package. Read each relevant module before editing it. Do not change the tests. Run the full tests/ suite until it is green.",
+  "seeds": [
+    {"file": "ledger/reconcile.py", "find": "        if abs(delta) > tolerance:", "replace": "        if delta > tolerance:"},
+    {"file": "ledger/pricing.py", "find": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=True)", "replace": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=False)"},
+    {"file": "ledger/entries.py", "find": "CENTS = Decimal(\"0.01\")", "replace": "CENTS = Decimal(\"0.1\")"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/reconcile.py", "ledger/pricing.py", "ledger/entries.py"],
+    "why_drift": "The rounding bug (CENTS) is a shared constant whose effect surfaces in every module, so the agent must grep across the codebase and read several files -- accumulating context that is irrelevant to the discount-ordering sub-task it works next.",
+    "must_appear": ["find_discrepancies", "delta", "tolerance", "tiers", "rate_for", "CENTS", "quantize"]
+  }
+}
