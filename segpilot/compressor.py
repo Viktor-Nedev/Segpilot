@@ -180,7 +180,13 @@ class SegpilotCompressor:
 
         compressed = self.strategy.compress(content, query=intent, kind=kind)
 
-        if self.cache is not None:
+        # Do NOT cache a passthrough. GpuServerStrategy returns the content
+        # unchanged when the hosted GPU is unreachable (e.g. a RunPod cold
+        # start), so caching that would freeze an uncompressed result into the
+        # benchmark and understate every arm that happened to run during the
+        # outage. Only a real compression -- strictly smaller than the input --
+        # is cached; a passthrough is retried on the next sweep.
+        if self.cache is not None and compressed != content:
             self.cache.put(
                 content, kind, intent,
                 compressed=compressed,
