@@ -207,9 +207,24 @@ def build_intent(
     reasoning = extract_recent_reasoning(messages)
     activity = describe_tool_call(tool_name, tool_args or {}) if tool_name else None
 
-    # Semantic signal first. Reasoning and a fresh user turn say WHAT matters;
-    # a tool call only says WHERE, so it can qualify an intent but never be one.
-    if reasoning:
+    # The tool call's `thought` argument, when present, is the agent's own
+    # one-line statement of why it is making this call -- the most direct and
+    # reliable current-activity signal there is. It exists because some models
+    # (Gemini via tool-calling among them) emit no free-form reasoning text: the
+    # `content` field is empty and everything is in the tool call. Rather than
+    # starve the intent engine, we ask each tool to carry a `thought`. This is a
+    # standard ReAct-style rationale, applied identically to every arm.
+    thought = None
+    if tool_args:
+        raw = tool_args.get("thought") or tool_args.get("reasoning")
+        thought = clean_text(raw) if isinstance(raw, str) else None
+
+    # Semantic signal first, most reliable to least. `thought` and free-form
+    # reasoning say WHAT matters; a tool call alone only says WHERE, so it can
+    # qualify an intent but never be one.
+    if thought:
+        source, current = "thought", _truncate(thought, 180)
+    elif reasoning:
         source, current = "assistant", _truncate(reasoning, 180)
     elif latest and latest != goal:
         source, current = "user_recent", _truncate(latest, 180)

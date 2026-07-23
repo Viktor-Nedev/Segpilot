@@ -201,6 +201,26 @@ TOOL_SCHEMAS = [
 ]
 
 
+# Every tool carries a required `thought`: one sentence stating what the agent is
+# trying to find out or do with this call, and why. This is a standard ReAct-style
+# rationale. It exists because some models (Gemini via tool-calling among them)
+# emit no free-form reasoning text -- the message content is empty and everything
+# is in the tool call -- which would otherwise starve SEGPILOT's intent engine of
+# its primary signal. The rationale is recorded and used identically for every
+# arm; the stock arm ignores it. The tool functions absorb it via **_.
+_THOUGHT_PROP = {
+    "type": "string",
+    "description": (
+        "One sentence: what you are trying to find out or accomplish with this "
+        "call right now, and why. State it before you act."
+    ),
+}
+for _schema in TOOL_SCHEMAS:
+    _params = _schema["function"]["parameters"]
+    _params["properties"] = {"thought": _THOUGHT_PROP, **_params["properties"]}
+    _params["required"] = ["thought", *_params.get("required", [])]
+
+
 def execute(workdir: Path, name: str, args: dict) -> tuple[str, bool]:
     """Run a tool. Returns (output, ok). Errors come back as text, not raises,
     so a bad call costs the model a turn instead of killing the run."""
