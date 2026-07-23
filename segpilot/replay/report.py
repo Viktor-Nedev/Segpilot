@@ -10,11 +10,43 @@ from __future__ import annotations
 from pathlib import Path
 
 from segpilot.replay.metrics import ArmMetrics
-from segpilot.replay.harness import SessionReplay
+from segpilot.replay.harness import SessionReplay, aggregate
 
 
 def _fmt_pct(x: float) -> str:
     return f"{x:.0%}"
+
+
+def population_of(task_id: str) -> str:
+    """Which benchmark population a session belongs to.
+
+    'campaign' sessions chain several bugs and drift; 'single-bug' sessions are
+    short and do not. They are reported separately so the neutral single-bug
+    result is never hidden inside a campaign average, and vice versa.
+    """
+    return "campaign" if task_id.startswith("campaign") else "single-bug"
+
+
+def _aggregate_table(totals: dict[str, ArmMetrics], arms: list[str]) -> list[str]:
+    base = totals.get("stock")
+    lines = [
+        "| arm | ratio | saved | must-keep ret. | task ret. | rel/1k | Δ vs stock | guard trips |",
+        "|---|--:|--:|--:|--:|--:|--:|--:|",
+    ]
+    for a in arms:
+        m = totals.get(a)
+        if m is None:
+            continue
+        delta = ""
+        if base and a != "stock" and base.task_relevance_per_1k:
+            delta = f"{m.task_relevance_per_1k / base.task_relevance_per_1k:.2f}×"
+        lines.append(
+            f"| `{a}` | {m.ratio:.3f} | {_fmt_pct(m.saving_pct)} | "
+            f"{_fmt_pct(m.mustkeep_retention)} | {_fmt_pct(m.task_retention)} | "
+            f"{m.task_relevance_per_1k:.2f} | {delta} | {m.guard_trips} |"
+        )
+    lines.append("")
+    return lines
 
 
 def markdown_report(
@@ -32,27 +64,29 @@ def markdown_report(
         "every arm was applied to identical, uncompressed reference content.\n"
     )
 
-    base = totals.get("stock")
+    # Split by population. The thesis is about drift, which only campaigns
+    # exhibit, so campaign and single-bug numbers must never be averaged
+    # together -- that would let one hide the other in either direction.
+    by_pop: dict[str, list[SessionReplay]] = {"campaign": [], "single-bug": []}
+    for r in replays:
+        by_pop[population_of(r.task_id)].append(r)
 
-    lines.append("## Aggregate\n")
-    lines.append("| arm | ratio | saved | must-keep ret. | task ret. | rel/1k | Δ vs stock | guard trips |")
-    lines.append("|---|--:|--:|--:|--:|--:|--:|--:|")
-    for a in arms:
-        m = totals[a]
-        delta = ""
-        if base and a != "stock" and base.task_relevance_per_1k:
-            delta = f"{m.task_relevance_per_1k / base.task_relevance_per_1k:.2f}×"
-        lines.append(
-            f"| `{a}` | {m.ratio:.3f} | {_fmt_pct(m.saving_pct)} | "
-            f"{_fmt_pct(m.mustkeep_retention)} | {_fmt_pct(m.task_retention)} | "
-            f"{m.task_relevance_per_1k:.2f} | {delta} | {m.guard_trips} |"
-        )
-    lines.append("")
+    for pop in ("campaign", "single-bug"):
+        subset = by_pop[pop]
+        if not subset:
+            continue
+        pop_totals = aggregate(subset, arms)
+        lines.append(f"## Aggregate — {pop} ({len(subset)} session(s))\n")
+        lines += _aggregate_table(pop_totals, arms)
+
+    lines.append("## Aggregate — all sessions\n")
+    lines += _aggregate_table(totals, arms)
 
     lines.append("> **rel/1k** = task-relevant tokens retained per 1000 tokens spent — "
                  "the headline. Raw retention flatters whichever arm compressed least, "
                  "so it is normalised by tokens actually spent. An arm only wins by "
-                 "keeping more of what the task needs for less.\n")
+                 "keeping more of what the task needs for less. Campaign sessions are "
+                 "the drift test; single-bug sessions are the no-drift control.\n")
 
     if solve_rate:
         lines.append("## Live solve rate\n")
