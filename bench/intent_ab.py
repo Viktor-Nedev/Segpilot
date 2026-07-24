@@ -2,12 +2,19 @@
 
     python -m bench.intent_ab
 
+⚠️ THIS IS AN ILLUSTRATIVE, HAND-CONSTRUCTED EXAMPLE — NOT A BENCHMARK RESULT.
+The session below was written by hand to show what the intent engine is *meant*
+to do when a session drifts. It is not evidence that it does so in practice. When
+we ran the real agent on real drifted sessions, the effect did NOT reproduce:
+intent/kind routing does not reliably beat stock. See docs/results.md for the
+actual N=3 measurement and docs/findings.md for what we learned. This file is
+kept as a design illustration only; do not quote its numbers as an outcome.
+
 THE SCENARIO
 ------------
-A long agent session that has drifted, which is the normal case rather than a
-contrived one. The user's original instruction was to add rate limiting. Forty
-turns later the agent is debugging a failing session-expiry test and reading
-`src/auth.py`.
+A long agent session that has drifted. The user's original instruction was to add
+rate limiting. Forty turns later the agent is debugging a failing session-expiry
+test and reading `src/auth.py`.
 
 Stock Paritok compresses that file against the *original instruction*, because
 `_extract_query` returns the user's task text and applies it to every segment.
@@ -130,6 +137,12 @@ def _hr(t: str) -> None:
 
 
 def main() -> int:
+    print("=" * 74)
+    print("  ILLUSTRATIVE hand-constructed example — NOT a benchmark result.")
+    print("  The real N=3 measurement (docs/results.md) found intent/kind routing")
+    print("  does NOT reliably beat stock. Do not quote these numbers as an outcome.")
+    print("=" * 74)
+
     cfg = SegpilotConfig.load()
     strategy = GpuServerStrategy(cfg.to_paritok_config().gpu_server)
     available, message = strategy.check()
