@@ -1,0 +1,329 @@
+<title>SEGPILOT — did routing Paritok compression per-segment help?</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --surface: #ffffff; --surface-2: #eef1f4;
+    --ink: #14181f; --muted: #5a6472; --faint: #8b95a3;
+    --line: #dfe4ea; --line-strong: #c7cfd8;
+    --signal: #0b8a97; --signal-ink: #06636d;
+    --caution: #a86611; --caution-bg: #f7eede;
+    --safe: #2f7d5b;
+    --shadow: 0 1px 2px rgba(20,24,31,.05), 0 8px 24px rgba(20,24,31,.06);
+    --mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --maxw: 68rem; --col: 40rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1015; --surface: #151a21; --surface-2: #1b222b;
+      --ink: #e7ebf0; --muted: #93a0b0; --faint: #6b7686;
+      --line: #232b35; --line-strong: #313b47;
+      --signal: #38d0dd; --signal-ink: #7fe3ec;
+      --caution: #e0a83a; --caution-bg: #2a2113;
+      --safe: #5ec08d;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f8; --surface: #ffffff; --surface-2: #eef1f4;
+    --ink: #14181f; --muted: #5a6472; --faint: #8b95a3;
+    --line: #dfe4ea; --line-strong: #c7cfd8;
+    --signal: #0b8a97; --signal-ink: #06636d;
+    --caution: #a86611; --caution-bg: #f7eede; --safe: #2f7d5b;
+    --shadow: 0 1px 2px rgba(20,24,31,.05), 0 8px 24px rgba(20,24,31,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1015; --surface: #151a21; --surface-2: #1b222b;
+    --ink: #e7ebf0; --muted: #93a0b0; --faint: #6b7686;
+    --line: #232b35; --line-strong: #313b47;
+    --signal: #38d0dd; --signal-ink: #7fe3ec;
+    --caution: #e0a83a; --caution-bg: #2a2113; --safe: #5ec08d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased; font-size: 16px;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.5rem; }
+  .col { max-width: var(--col); }
+  a { color: var(--signal-ink); text-underline-offset: 2px; }
+  code, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.15; letter-spacing: -0.02em; margin: 0; }
+  .eyebrow {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ---- masthead ---- */
+  header { border-bottom: 1px solid var(--line); }
+  .masthead { padding: 3.4rem 0 2.6rem; }
+  .brand {
+    display: flex; align-items: baseline; gap: .6rem; margin-bottom: 2.2rem;
+  }
+  .brand .name {
+    font-family: var(--mono); font-weight: 700; letter-spacing: .12em;
+    font-size: .82rem;
+  }
+  .brand .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); display: inline-block; }
+  .brand .built { color: var(--faint); font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; }
+  .masthead h1 { font-size: clamp(1.9rem, 4.6vw, 3.15rem); font-weight: 800; }
+  .masthead .lede {
+    margin-top: 1.3rem; font-size: 1.18rem; color: var(--muted); max-width: 46rem;
+  }
+  .masthead .lede strong { color: var(--ink); font-weight: 650; }
+
+  /* ---- stat strip ---- */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line);
+    border-radius: 12px; overflow: hidden; margin-top: 2.4rem;
+  }
+  .stat { background: var(--surface); padding: 1.1rem 1.2rem; }
+  .stat .n { font-family: var(--mono); font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: .8rem; color: var(--muted); margin-top: .15rem; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---- sections ---- */
+  section { padding: 3rem 0; border-bottom: 1px solid var(--line); }
+  section > .wrap > .eyebrow { display: block; margin-bottom: .7rem; }
+  h2 { font-size: 1.5rem; font-weight: 750; margin-bottom: 1rem; }
+  section p { color: var(--muted); max-width: 42rem; }
+  section p strong { color: var(--ink); font-weight: 620; }
+
+  /* ---- lever readouts ---- */
+  .levers { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin-top: 1.6rem; }
+  @media (max-width: 640px) { .levers { grid-template-columns: 1fr; } }
+  .lever {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 11px; padding: 1.1rem 1.2rem; box-shadow: var(--shadow);
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .lever .k { font-family: var(--mono); font-weight: 650; font-size: 1rem; }
+  .lever .d { font-size: .82rem; color: var(--muted); margin-top: .2rem; max-width: 20rem; }
+  .tag {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: .28rem .6rem; border-radius: 999px; white-space: nowrap; font-weight: 600;
+  }
+  .tag.on { color: var(--signal-ink); background: color-mix(in srgb, var(--signal) 15%, transparent); border: 1px solid color-mix(in srgb, var(--signal) 40%, transparent); }
+  .tag.off { color: var(--muted); background: var(--surface-2); border: 1px solid var(--line-strong); }
+
+  /* ---- verdict / arms table ---- */
+  .verdict-card {
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 14px; padding: 1.6rem 1.7rem; box-shadow: var(--shadow); margin-top: 1.4rem;
+  }
+  .verdict-card .headline { font-size: 1.28rem; font-weight: 720; letter-spacing: -.02em; }
+  .verdict-card .headline .no { color: var(--caution); }
+  table.data { width: 100%; border-collapse: collapse; margin-top: 1.3rem; font-size: .92rem; }
+  table.data th, table.data td { text-align: right; padding: .55rem .7rem; border-bottom: 1px solid var(--line); }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data thead th { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  table.data td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  table.data td:first-child { font-family: var(--sans); }
+  table.data tr.me td { background: color-mix(in srgb, var(--signal) 8%, transparent); }
+  table.data tr.me td:first-child { font-weight: 650; }
+  .meter { display: inline-flex; align-items: center; gap: .5rem; }
+  .meter .bar { width: 74px; height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .meter .bar > i { display: block; height: 100%; background: var(--signal); }
+  .tablewrap { overflow-x: auto; }
+  .note { font-size: .85rem; color: var(--faint); margin-top: 1rem; font-style: italic; }
+
+  /* ---- corrections log ---- */
+  .log { margin-top: 1.5rem; display: grid; gap: .9rem; }
+  .correction {
+    border-left: 3px solid var(--caution); background: var(--caution-bg);
+    padding: .95rem 1.1rem; border-radius: 0 10px 10px 0;
+  }
+  .correction .was { font-family: var(--mono); font-size: .82rem; color: var(--caution); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .correction .why { margin-top: .35rem; font-size: .92rem; color: var(--ink); }
+
+  /* ---- findings ---- */
+  ol.findings { margin: 1.4rem 0 0; padding: 0; list-style: none; counter-reset: f; display: grid; gap: .1rem; }
+  ol.findings li {
+    display: grid; grid-template-columns: 2.2rem 1fr; gap: .5rem; align-items: baseline;
+    padding: .7rem 0; border-bottom: 1px solid var(--line);
+  }
+  ol.findings li::before {
+    counter-increment: f; content: counter(f, decimal-leading-zero);
+    font-family: var(--mono); color: var(--signal); font-size: .82rem; font-weight: 650;
+  }
+  ol.findings .t { font-size: .96rem; }
+  ol.findings .t code { font-size: .86em; background: var(--surface-2); padding: .05em .35em; border-radius: 4px; }
+
+  /* ---- reproduce ---- */
+  pre {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1.1rem 1.2rem; overflow-x: auto; margin-top: 1.3rem;
+    font-family: var(--mono); font-size: .84rem; line-height: 1.7; color: var(--ink);
+  }
+  pre .c { color: var(--faint); }
+  pre .p { color: var(--signal-ink); }
+
+  footer { padding: 2.6rem 0 3.4rem; color: var(--muted); font-size: .9rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: baseline; justify-content: space-between; }
+  footer a { font-family: var(--mono); font-size: .82rem; }
+</style>
+
+<header>
+  <div class="wrap masthead">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="name">SEGPILOT</span>
+      <span class="built">// measurement report · built with Paritok</span>
+    </div>
+    <h1>We measured whether routing Paritok's compression per&#8209;segment helps. It mostly doesn't.</h1>
+    <p class="lede">
+      Most "we optimized X" projects ship the idea and a flattering number. We shipped the idea,
+      then <strong>measured it honestly across 7 real agent sessions</strong> and reported that it
+      does not reliably beat Paritok's stock defaults. The lasting output is
+      <strong>nine reproducible findings</strong> about Paritok's hosted API and a probe you can
+      point at your own workload.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="n">9</div><div class="l">measured findings</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">replayed sessions</div></div>
+      <div class="stat"><div class="n">5</div><div class="l">compression arms</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">numbers retracted</div></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Step one · measure the instrument</span>
+    <h2>Which Paritok knobs actually turn?</h2>
+    <p>
+      Before building anything, we swept every steering parameter against the hosted GPU, holding
+      the content constant and changing one knob at a time. Two are honoured; two are silently
+      discarded — including one the docs advertise.
+    </p>
+  </div>
+  <div class="wrap">
+    <div class="levers">
+      <div class="lever">
+        <div><div class="k">query</div><div class="d">the agent's intent — 160&#8202;→&#8202;36 tokens as it changes, and it decides which code survives</div></div>
+        <span class="tag on">honoured</span>
+      </div>
+      <div class="lever">
+        <div><div class="k">kind</div><div class="d">what the segment is — 206 / 187 / 15 tokens for file_read / log / thinking</div></div>
+        <span class="tag on">honoured</span>
+      </div>
+      <div class="lever">
+        <div><div class="k">level</div><div class="d">L0–L3 aggressiveness — byte-identical output, and it accepts <code>"BANANA"</code> with HTTP 200</div></div>
+        <span class="tag off">ignored</span>
+      </div>
+      <div class="lever">
+        <div><div class="k">target_ratio</div><div class="d">requested ratio — byte-identical for 0.5, 0.2, "10%", null</div></div>
+        <span class="tag off">ignored</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Step two · route the knobs that work</span>
+    <h2>The result, stated plainly</h2>
+    <p>
+      SEGPILOT routes <code>query</code> and <code>kind</code> per segment, so each tool result is
+      compressed for what the agent is doing right then. Five arms isolate each layer, replayed over
+      identical uncompressed trajectories — 3 drifted multi-bug campaigns and 4 single-bug controls.
+    </p>
+  </div>
+  <div class="wrap col">
+    <div class="verdict-card">
+      <div class="headline">Intent/kind routing does <span class="no">not</span> reliably beat stock&nbsp;— even under drift.</div>
+      <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>arm</th><th>must-keep retention (campaigns)</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>stock</td><td>81%</td><td><span class="meter"><span class="bar"><i style="width:81%"></i></span></span></td></tr>
+          <tr><td>kind_only</td><td>81%</td><td><span class="meter"><span class="bar"><i style="width:81%"></i></span></span></td></tr>
+          <tr class="me"><td>intent_only</td><td>93%</td><td><span class="meter"><span class="bar"><i style="width:93%"></i></span></span></td></tr>
+          <tr class="me"><td>segpilot</td><td>93%</td><td><span class="meter"><span class="bar"><i style="width:93%"></i></span></span></td></tr>
+          <tr><td>segpilot+guard</td><td>97%</td><td><span class="meter"><span class="bar"><i style="width:97%"></i></span></span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="note" style="font-style:normal;color:var(--muted)">
+        <strong style="color:var(--ink)">kind routing does nothing</strong> — kind_only equals stock everywhere.
+        <strong style="color:var(--ink)">intent routing is weak and inconsistent</strong> — +9pp must-keep on average
+        across three drift sessions, but it reverses on one of them, and task-relevant retention doesn't move at all.
+      </p>
+    </div>
+    <p class="note">Numbers are must-keep retention — Paritok's own training-time definition of content that must survive. It is the only axis the arms differ on; task-relevant retention saturates.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Kept in view, not hidden</span>
+    <h2>Two numbers we retracted</h2>
+    <p>Twice we reported an encouraging result and then had to take it back when the data was cleaned up. Both are kept — the whole project is an argument for measuring instead of trusting the first number.</p>
+    <div class="log">
+      <div class="correction">
+        <div class="was">"79% fewer tokens · 3.1× on a drift session"</div>
+        <div class="why">A hand-constructed illustration, not a benchmark result. The real agent sessions did not reproduce it.</div>
+      </div>
+      <div class="correction">
+        <div class="was">"1.61× on the drift session"</div>
+        <div class="why">An artefact of a cache poisoned during a hosted-GPU outage — passthrough segments were cached as if compressed. Fixed, then re-run to a clean deterministic pass.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">The real contribution</span>
+    <h2>Nine findings about Paritok's hosted API</h2>
+    <p>Each is reproducible from the repository, with a runnable check.</p>
+    <ol class="findings">
+      <li><span class="t">Hosted GPU silently ignores <code>level</code> — and accepts <code>"BANANA"</code> with HTTP&nbsp;200</span></li>
+      <li><span class="t">Compression cache is blind to <code>kind</code>/<code>level</code>, collapsing any per-segment policy</span></li>
+      <li><span class="t">Hosted endpoint does not validate API keys → silently unattributed usage</span></li>
+      <li><span class="t">Intent dominates compression, but stock passes one stale intent per request</span></li>
+      <li><span class="t"><code>tag_messages</code>/<code>assign_level</code> are dead code; hosted path sends <code>kind: null</code></span></li>
+      <li><span class="t">Proxy hardcodes <code>/v1</code>, breaking Gemini / OpenRouter / Groq base URLs</span></li>
+      <li><span class="t">Documented <code>tools/view_trace.py</code> does not exist — so we wrote one</span></li>
+      <li><span class="t"><code>shadow_storage: "redis"</code> validates but is unimplemented → silent data loss</span></li>
+      <li><span class="t">The two <code>kind</code> classifiers disagree; the conversation-aware one mislabels every file read</span></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Check it yourself</span>
+    <h2>Reproduce every number</h2>
+    <p>The reference sessions are committed, so the replay reproduces the exact figures above without recording anything new.</p>
+    <pre><span class="c"># which Paritok parameters actually work</span>
+python -m segpilot.<span class="p">probe</span> --all
+
+<span class="c"># the arms, replayed over the committed sessions</span>
+python -m segpilot.replay.<span class="p">harness</span> --all --suffix __raw \
+  --arms stock,kind_only,intent_only,segpilot,segpilot+guard
+
+<span class="c"># regenerate the report + Pareto</span>
+python -m segpilot.replay.<span class="p">report</span> --out examples/reports/</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>SEGPILOT — an independent measurement of Paritok compression. Not affiliated with Paritok.</span>
+    <a href="https://github.com/Paritok-official/paritok-4b-v1">Built with Paritok ↗</a>
+  </div>
+</footer>
+
+<script>
+  // Respect the viewer's theme toggle over the OS media query, both directions.
+  (function () {
+    try {
+      var t = localStorage.getItem('theme');
+      if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
