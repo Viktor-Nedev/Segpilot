@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" font-family="ui-sans-serif,system-ui,sans-serif">
+<rect width="640" height="420" fill="#0b1220"/>
+<line x1="70" y1="350" x2="570" y2="350" stroke="#334155"/>
+<line x1="70" y1="70" x2="70" y2="350" stroke="#334155"/>
+<text x="320.0" y="396" fill="#94a3b8" font-size="13" text-anchor="middle">tokens spent per session (lower is cheaper →)</text>
+<text x="24" y="210.0" fill="#94a3b8" font-size="13" text-anchor="middle" transform="rotate(-90 24 210.0)">must-keep retention →</text>
+<text x="70" y="46" fill="#e2e8f0" font-size="15" font-weight="600">SEGPILOT — spend vs task-relevant retention</text>
+<text x="70" y="64" fill="#64748b" font-size="11">up and to the left is better</text>
+<line x1="70" y1="280.0" x2="570" y2="280.0" stroke="#1e293b"/>
+<text x="62" y="284.0" fill="#64748b" font-size="11" text-anchor="end">25%</text>
+<line x1="70" y1="210.0" x2="570" y2="210.0" stroke="#1e293b"/>
+<text x="62" y="214.0" fill="#64748b" font-size="11" text-anchor="end">50%</text>
+<line x1="70" y1="140.0" x2="570" y2="140.0" stroke="#1e293b"/>
+<text x="62" y="144.0" fill="#64748b" font-size="11" text-anchor="end">75%</text>
+<line x1="70" y1="70.0" x2="570" y2="70.0" stroke="#1e293b"/>
+<text x="62" y="74.0" fill="#64748b" font-size="11" text-anchor="end">100%</text>
+<circle cx="414.8" cy="116.9" r="7" fill="#94a3b8"/>
+<text x="425.8" y="120.9" fill="#94a3b8" font-size="12">stock</text>
+<circle cx="408.7" cy="116.9" r="7" fill="#38bdf8"/>
+<text x="419.7" y="120.9" fill="#38bdf8" font-size="12">kind_only</text>
+<circle cx="410.1" cy="91.1" r="7" fill="#a78bfa"/>
+<text x="421.1" y="95.1" fill="#a78bfa" font-size="12">intent_only</text>
+<circle cx="393.9" cy="92.7" r="7" fill="#34d399"/>
+<text x="404.9" y="96.7" fill="#34d399" font-size="12">segpilot</text>
+<circle cx="524.5" cy="75.8" r="7" fill="#fbbf24"/>
+<text x="535.5" y="79.8" fill="#fbbf24" font-size="12">segpilot+guard</text>
+</svg>

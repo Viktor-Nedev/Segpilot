@@ -1,0 +1,60 @@
+
+======================================================================
+Parameter: query (user intent)
+======================================================================
+   baseline content: 263 tokens
+
+   query='why does authenticate_user reject valid passwords'   58 tok  ratio 0.221   kept: authenticate
+   query='debug the KMS key rotation logic'   65 tok  ratio 0.247   kept: rotate
+   query='fix the prometheus metrics export path'   36 tok  ratio 0.137   kept: export
+   query=''              160 tok  ratio 0.608   kept: authenticate, rotate, export
+
+   -> 4 distinct output(s) across 4 values
+   -> VERDICT: `query` is HONOURED.
+
+======================================================================
+Parameter: kind
+======================================================================
+   baseline content: 263 tokens
+
+   kind='file_read'      73 tok  ratio 0.278   kept: authenticate
+   kind='log_output'     81 tok  ratio 0.308   kept: authenticate
+   kind='assistant_thinking'   15 tok  ratio 0.057   kept: authenticate
+
+   -> 3 distinct output(s) across 3 values
+   -> VERDICT: `kind` is HONOURED.
+
+======================================================================
+Parameter: level
+======================================================================
+   baseline content: 263 tokens
+
+   level='L0'             73 tok  ratio 0.278   kept: authenticate
+   level='L1'             73 tok  ratio 0.278   kept: authenticate
+   level='L2'             73 tok  ratio 0.278   kept: authenticate
+   level='L3'             73 tok  ratio 0.278   kept: authenticate
+   level=None             73 tok  ratio 0.278   kept: authenticate
+   level='BANANA'         73 tok  ratio 0.278   kept: authenticate
+
+   -> 1 distinct output(s) across 6 values
+   -> VERDICT: `level` is IGNORED by the hosted server.
+
+======================================================================
+Parameter: target_ratio
+======================================================================
+   baseline content: 263 tokens
+
+   target_ratio='0.5'            73 tok  ratio 0.278   kept: authenticate
+   target_ratio='0.2'            73 tok  ratio 0.278   kept: authenticate
+   target_ratio='10%'            73 tok  ratio 0.278   kept: authenticate
+   target_ratio=None             73 tok  ratio 0.278   kept: authenticate
+
+   -> 1 distinct output(s) across 4 values
+   -> VERDICT: `target_ratio` is IGNORED by the hosted server.
+
+======================================================================
+Interpretation
+======================================================================
+   Compression runs at temperature 0. Byte-identical output across
+   different values of a parameter means that parameter never reached
+   the model. See docs/findings.md for the full write-up.

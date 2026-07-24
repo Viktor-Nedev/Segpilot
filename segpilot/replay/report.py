@@ -63,6 +63,15 @@ def markdown_report(
         f"{len(arms)} compression arms. Compression ran on Paritok's hosted GPU; "
         "every arm was applied to identical, uncompressed reference content.\n"
     )
+    lines.append(
+        "> **Verdict (see [results.md](../../docs/results.md)):** intent/kind "
+        "routing does not reliably beat stock. `kind_only` equals `stock` "
+        "everywhere; the only mover is must-keep retention under intent, and it is "
+        "small (+~9pp mean) and inconsistent (it reverses on one of three drift "
+        "sessions). `task ret.` is essentially constant across arms, so `rel/1k` is "
+        "flat and reflects only how hard each arm compressed. Read must-keep "
+        "retention as the discriminating axis, not rel/1k.\n"
+    )
 
     # Split by population. The thesis is about drift, which only campaigns
     # exhibit, so campaign and single-bug numbers must never be averaged
@@ -82,11 +91,13 @@ def markdown_report(
     lines.append("## Aggregate — all sessions\n")
     lines += _aggregate_table(totals, arms)
 
-    lines.append("> **rel/1k** = task-relevant tokens retained per 1000 tokens spent — "
-                 "the headline. Raw retention flatters whichever arm compressed least, "
-                 "so it is normalised by tokens actually spent. An arm only wins by "
-                 "keeping more of what the task needs for less. Campaign sessions are "
-                 "the drift test; single-bug sessions are the no-drift control.\n")
+    lines.append("> **must-keep ret.** = fraction of Paritok's own must-keep spans "
+                 "(paths, identifiers, error classes) surviving compression — the axis "
+                 "on which the arms actually differ. **rel/1k** = task-relevant tokens "
+                 "retained per 1000 spent; it is flat here because task retention is "
+                 "constant across arms, so it measures only compression aggressiveness. "
+                 "Campaign sessions are the drift test; single-bug sessions are the "
+                 "no-drift control.\n")
 
     if solve_rate:
         lines.append("## Live solve rate\n")
@@ -116,13 +127,17 @@ def markdown_report(
 
 
 def pareto_svg(totals: dict[str, ArmMetrics], arms: list[str]) -> str:
-    """Scatter of spend (x = compressed tokens) vs task retention (y).
+    """Scatter of spend (x = compressed tokens) vs must-keep retention (y).
 
-    The frontier is up-and-left: keep more of the task, spend fewer tokens.
+    Must-keep retention -- Paritok's own training-time definition of content that
+    must survive -- is the axis on which the arms actually differ; task-relevant
+    retention saturates across arms, so plotting it would show a flat line and
+    hide the (weak, inconsistent) effect that does exist. The frontier is
+    up-and-left: keep more must-keep content, spend fewer tokens.
     """
     W, H, pad = 640, 420, 70
     xs = [totals[a].compressed_tokens for a in arms]
-    ys = [totals[a].task_retention for a in arms]
+    ys = [totals[a].mustkeep_retention for a in arms]
     xmax = max(xs) * 1.1 if xs and max(xs) else 1.0
     ymin = min(0.0, min(ys) if ys else 0.0)
 
@@ -143,7 +158,7 @@ def pareto_svg(totals: dict[str, ArmMetrics], arms: list[str]) -> str:
         f'<text x="{W/2}" y="{H-24}" fill="#94a3b8" font-size="13" '
         f'text-anchor="middle">tokens spent per session (lower is cheaper →)</text>',
         f'<text x="24" y="{H/2}" fill="#94a3b8" font-size="13" '
-        f'text-anchor="middle" transform="rotate(-90 24 {H/2})">task-relevant retention →</text>',
+        f'text-anchor="middle" transform="rotate(-90 24 {H/2})">must-keep retention →</text>',
         f'<text x="{pad}" y="{pad-24}" fill="#e2e8f0" font-size="15" '
         f'font-weight="600">SEGPILOT — spend vs task-relevant retention</text>',
         f'<text x="{pad}" y="{pad-6}" fill="#64748b" font-size="11">'
@@ -159,7 +174,7 @@ def pareto_svg(totals: dict[str, ArmMetrics], arms: list[str]) -> str:
     # points
     for a in arms:
         m = totals[a]
-        x, y = px(m.compressed_tokens), py(m.task_retention)
+        x, y = px(m.compressed_tokens), py(m.mustkeep_retention)
         color = palette.get(a, "#e2e8f0")
         parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="7" fill="{color}"/>')
         parts.append(f'<text x="{x+11:.1f}" y="{y+4:.1f}" fill="{color}" '
@@ -187,3 +202,51 @@ def write_report(
     )
     svg_path.write_text(pareto_svg(totals, arms), encoding="utf-8")
     return {"markdown": md_path, "svg": svg_path}
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Replay all reference sessions and write the report.
+
+        python -m segpilot.replay.report --out examples/reports/
+
+    Replay is served from the compression cache, so this is deterministic and
+    makes no network calls once the cache is warm.
+    """
+    import argparse
+
+    from segpilot.compressor import COMPRESSING_ARMS
+    from segpilot.config import SegpilotConfig
+    from segpilot.replay.harness import run
+    from segpilot.replay.session import find_sessions, load_session
+
+    ap = argparse.ArgumentParser(description="Write the SEGPILOT replay report")
+    ap.add_argument("--sessions-dir", default="examples/sessions")
+    ap.add_argument("--suffix", default="__raw",
+                    help="session filename suffix (default: __raw references)")
+    ap.add_argument("--arms", default=",".join(COMPRESSING_ARMS))
+    ap.add_argument("--out", default="examples/reports")
+    args = ap.parse_args(argv)
+
+    arms = [a.strip() for a in args.arms.split(",") if a.strip()]
+    paths = find_sessions(args.sessions_dir, suffix=args.suffix)
+    if not paths:
+        print(f"no sessions matching *{args.suffix}.jsonl in {args.sessions_dir}")
+        return 1
+    sessions = [load_session(p) for p in paths]
+
+    cfg = SegpilotConfig.load()
+    if cfg.paritok.require_api_key and not cfg.paritok.api_key:
+        print("PARITOK_API_KEY not set; an uncached segment would need it.")
+        return 1
+
+    replays, totals = run(sessions, config=cfg, arms=arms)
+    written = write_report(totals, replays, arms, out_dir=args.out)
+    for kind, path in written.items():
+        print(f"  wrote {kind}: {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(main())
