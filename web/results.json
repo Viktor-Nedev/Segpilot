@@ -1,0 +1,690 @@
+{
+  "generated_from_sessions": 7,
+  "arms": [
+    "stock",
+    "kind_only",
+    "intent_only",
+    "segpilot",
+    "segpilot+guard"
+  ],
+  "aggregate_all": [
+    {
+      "arm": "stock",
+      "ratio": 0.49,
+      "saving_pct": 0.51,
+      "must_keep_retention": 0.832,
+      "task_retention": 0.923,
+      "rel_per_1k": 0.057,
+      "guard_trips": 0,
+      "sessions": 7,
+      "original_tokens": 32876,
+      "compressed_tokens": 16100
+    },
+    {
+      "arm": "kind_only",
+      "ratio": 0.481,
+      "saving_pct": 0.519,
+      "must_keep_retention": 0.832,
+      "task_retention": 0.923,
+      "rel_per_1k": 0.058,
+      "guard_trips": 0,
+      "sessions": 7,
+      "original_tokens": 32876,
+      "compressed_tokens": 15812
+    },
+    {
+      "arm": "intent_only",
+      "ratio": 0.483,
+      "saving_pct": 0.517,
+      "must_keep_retention": 0.925,
+      "task_retention": 0.923,
+      "rel_per_1k": 0.058,
+      "guard_trips": 0,
+      "sessions": 7,
+      "original_tokens": 32876,
+      "compressed_tokens": 15877
+    },
+    {
+      "arm": "segpilot",
+      "ratio": 0.46,
+      "saving_pct": 0.54,
+      "must_keep_retention": 0.919,
+      "task_retention": 0.923,
+      "rel_per_1k": 0.061,
+      "guard_trips": 0,
+      "sessions": 7,
+      "original_tokens": 32876,
+      "compressed_tokens": 15123
+    },
+    {
+      "arm": "segpilot+guard",
+      "ratio": 0.646,
+      "saving_pct": 0.354,
+      "must_keep_retention": 0.979,
+      "task_retention": 0.949,
+      "rel_per_1k": 0.045,
+      "guard_trips": 6,
+      "sessions": 7,
+      "original_tokens": 32876,
+      "compressed_tokens": 21222
+    }
+  ],
+  "populations": {
+    "campaign": {
+      "session_count": 3,
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.471,
+          "saving_pct": 0.529,
+          "must_keep_retention": 0.814,
+          "task_retention": 0.952,
+          "rel_per_1k": 0.081,
+          "guard_trips": 0,
+          "sessions": 3,
+          "original_tokens": 25126,
+          "compressed_tokens": 11822
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.456,
+          "saving_pct": 0.544,
+          "must_keep_retention": 0.807,
+          "task_retention": 0.952,
+          "rel_per_1k": 0.083,
+          "guard_trips": 0,
+          "sessions": 3,
+          "original_tokens": 25126,
+          "compressed_tokens": 11447
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.463,
+          "saving_pct": 0.537,
+          "must_keep_retention": 0.928,
+          "task_retention": 0.952,
+          "rel_per_1k": 0.082,
+          "guard_trips": 0,
+          "sessions": 3,
+          "original_tokens": 25126,
+          "compressed_tokens": 11624
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.439,
+          "saving_pct": 0.561,
+          "must_keep_retention": 0.926,
+          "task_retention": 0.952,
+          "rel_per_1k": 0.086,
+          "guard_trips": 0,
+          "sessions": 3,
+          "original_tokens": 25126,
+          "compressed_tokens": 11040
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.61,
+          "saving_pct": 0.39,
+          "must_keep_retention": 0.974,
+          "task_retention": 0.952,
+          "rel_per_1k": 0.062,
+          "guard_trips": 4,
+          "sessions": 3,
+          "original_tokens": 25126,
+          "compressed_tokens": 15321
+        }
+      ]
+    },
+    "single-bug": {
+      "session_count": 4,
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.552,
+          "saving_pct": 0.448,
+          "must_keep_retention": 0.91,
+          "task_retention": 0.889,
+          "rel_per_1k": 0.208,
+          "guard_trips": 0,
+          "sessions": 4,
+          "original_tokens": 7750,
+          "compressed_tokens": 4278
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.563,
+          "saving_pct": 0.437,
+          "must_keep_retention": 0.94,
+          "task_retention": 0.889,
+          "rel_per_1k": 0.204,
+          "guard_trips": 0,
+          "sessions": 4,
+          "original_tokens": 7750,
+          "compressed_tokens": 4365
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.549,
+          "saving_pct": 0.451,
+          "must_keep_retention": 0.91,
+          "task_retention": 0.889,
+          "rel_per_1k": 0.209,
+          "guard_trips": 0,
+          "sessions": 4,
+          "original_tokens": 7750,
+          "compressed_tokens": 4253
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.527,
+          "saving_pct": 0.473,
+          "must_keep_retention": 0.89,
+          "task_retention": 0.889,
+          "rel_per_1k": 0.218,
+          "guard_trips": 0,
+          "sessions": 4,
+          "original_tokens": 7750,
+          "compressed_tokens": 4083
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.761,
+          "saving_pct": 0.239,
+          "must_keep_retention": 1.0,
+          "task_retention": 0.944,
+          "rel_per_1k": 0.16,
+          "guard_trips": 2,
+          "sessions": 4,
+          "original_tokens": 7750,
+          "compressed_tokens": 5901
+        }
+      ]
+    }
+  },
+  "per_task": [
+    {
+      "task_id": "bug_01",
+      "population": "single-bug",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.46,
+          "saving_pct": 0.54,
+          "must_keep_retention": 0.791,
+          "task_retention": 0.6,
+          "rel_per_1k": 0.504,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2590,
+          "compressed_tokens": 1191
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.493,
+          "saving_pct": 0.507,
+          "must_keep_retention": 0.86,
+          "task_retention": 0.6,
+          "rel_per_1k": 0.469,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2590,
+          "compressed_tokens": 1278
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.46,
+          "saving_pct": 0.54,
+          "must_keep_retention": 0.791,
+          "task_retention": 0.6,
+          "rel_per_1k": 0.504,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2590,
+          "compressed_tokens": 1191
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.46,
+          "saving_pct": 0.54,
+          "must_keep_retention": 0.791,
+          "task_retention": 0.6,
+          "rel_per_1k": 0.504,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2590,
+          "compressed_tokens": 1191
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.791,
+          "saving_pct": 0.209,
+          "must_keep_retention": 1.0,
+          "task_retention": 0.8,
+          "rel_per_1k": 0.391,
+          "guard_trips": 1,
+          "sessions": 1,
+          "original_tokens": 2590,
+          "compressed_tokens": 2048
+        }
+      ]
+    },
+    {
+      "task_id": "bug_02",
+      "population": "single-bug",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.599,
+          "saving_pct": 0.401,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.032,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1619,
+          "compressed_tokens": 969
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.599,
+          "saving_pct": 0.401,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.032,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1619,
+          "compressed_tokens": 969
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.599,
+          "saving_pct": 0.401,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.032,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1619,
+          "compressed_tokens": 969
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.599,
+          "saving_pct": 0.401,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.032,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1619,
+          "compressed_tokens": 969
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.599,
+          "saving_pct": 0.401,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.032,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1619,
+          "compressed_tokens": 969
+        }
+      ]
+    },
+    {
+      "task_id": "bug_03",
+      "population": "single-bug",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.547,
+          "saving_pct": 0.453,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.311,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1395,
+          "compressed_tokens": 763
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.547,
+          "saving_pct": 0.453,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.311,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1395,
+          "compressed_tokens": 763
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.529,
+          "saving_pct": 0.471,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.355,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1395,
+          "compressed_tokens": 738
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.529,
+          "saving_pct": 0.471,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.355,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1395,
+          "compressed_tokens": 738
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.529,
+          "saving_pct": 0.471,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 1.355,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 1395,
+          "compressed_tokens": 738
+        }
+      ]
+    },
+    {
+      "task_id": "bug_04",
+      "population": "single-bug",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.631,
+          "saving_pct": 0.369,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.738,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2146,
+          "compressed_tokens": 1355
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.631,
+          "saving_pct": 0.369,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.738,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2146,
+          "compressed_tokens": 1355
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.631,
+          "saving_pct": 0.369,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.738,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2146,
+          "compressed_tokens": 1355
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.552,
+          "saving_pct": 0.448,
+          "must_keep_retention": 0.923,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.844,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 2146,
+          "compressed_tokens": 1185
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 1.0,
+          "saving_pct": 0.0,
+          "must_keep_retention": 1.0,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.466,
+          "guard_trips": 1,
+          "sessions": 1,
+          "original_tokens": 2146,
+          "compressed_tokens": 2146
+        }
+      ]
+    },
+    {
+      "task_id": "campaign_1",
+      "population": "campaign",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.399,
+          "saving_pct": 0.601,
+          "must_keep_retention": 0.673,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.247,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 10138,
+          "compressed_tokens": 4050
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.405,
+          "saving_pct": 0.595,
+          "must_keep_retention": 0.673,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.244,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 10138,
+          "compressed_tokens": 4104
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.425,
+          "saving_pct": 0.575,
+          "must_keep_retention": 0.957,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.232,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 10138,
+          "compressed_tokens": 4311
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.368,
+          "saving_pct": 0.632,
+          "must_keep_retention": 0.951,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.268,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 10138,
+          "compressed_tokens": 3733
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.471,
+          "saving_pct": 0.529,
+          "must_keep_retention": 0.969,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.21,
+          "guard_trips": 1,
+          "sessions": 1,
+          "original_tokens": 10138,
+          "compressed_tokens": 4770
+        }
+      ]
+    },
+    {
+      "task_id": "campaign_2",
+      "population": "campaign",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.548,
+          "saving_pct": 0.452,
+          "must_keep_retention": 0.957,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.28,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6518,
+          "compressed_tokens": 3574
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.548,
+          "saving_pct": 0.452,
+          "must_keep_retention": 0.957,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.28,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6518,
+          "compressed_tokens": 3574
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.405,
+          "saving_pct": 0.595,
+          "must_keep_retention": 0.871,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.379,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6518,
+          "compressed_tokens": 2639
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.405,
+          "saving_pct": 0.595,
+          "must_keep_retention": 0.871,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.379,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6518,
+          "compressed_tokens": 2639
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.76,
+          "saving_pct": 0.24,
+          "must_keep_retention": 0.946,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.202,
+          "guard_trips": 2,
+          "sessions": 1,
+          "original_tokens": 6518,
+          "compressed_tokens": 4953
+        }
+      ]
+    },
+    {
+      "task_id": "campaign_3",
+      "population": "campaign",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.496,
+          "saving_pct": 0.504,
+          "must_keep_retention": 0.869,
+          "task_retention": 0.857,
+          "rel_per_1k": 0.204,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 8470,
+          "compressed_tokens": 4198
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.445,
+          "saving_pct": 0.555,
+          "must_keep_retention": 0.852,
+          "task_retention": 0.857,
+          "rel_per_1k": 0.227,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 8470,
+          "compressed_tokens": 3769
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.552,
+          "saving_pct": 0.448,
+          "must_keep_retention": 0.932,
+          "task_retention": 0.857,
+          "rel_per_1k": 0.183,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 8470,
+          "compressed_tokens": 4674
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.551,
+          "saving_pct": 0.449,
+          "must_keep_retention": 0.932,
+          "task_retention": 0.857,
+          "rel_per_1k": 0.184,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 8470,
+          "compressed_tokens": 4668
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.661,
+          "saving_pct": 0.339,
+          "must_keep_retention": 0.994,
+          "task_retention": 0.857,
+          "rel_per_1k": 0.153,
+          "guard_trips": 1,
+          "sessions": 1,
+          "original_tokens": 8470,
+          "compressed_tokens": 5598
+        }
+      ]
+    }
+  ],
+  "findings": [
+    "Hosted GPU silently ignores level — and accepts \"BANANA\" with HTTP 200",
+    "Compression cache is blind to kind/level, collapsing any per-segment policy",
+    "Hosted endpoint does not validate API keys → silently unattributed usage",
+    "Intent dominates compression, but stock passes one stale intent per request",
+    "tag_messages/assign_level are dead code; hosted path sends kind: null",
+    "Proxy hardcodes /v1, breaking Gemini/OpenRouter/Groq-style base URLs",
+    "Documented tools/view_trace.py does not exist (we wrote one)",
+    "shadow_storage: \"redis\" validates but is unimplemented → silent data loss",
+    "The two kind classifiers disagree; the conversation-aware one mislabels every file read"
+  ],
+  "corrections": [
+    {
+      "was": "79% fewer tokens / 3.1× on a drift session",
+      "why": "A hand-constructed example, not a benchmark result — the real agent sessions didn't reproduce it."
+    },
+    {
+      "was": "1.61× rel/1k on the drift session",
+      "why": "An artefact of a cache poisoned during a hosted-GPU outage: passthrough segments were cached as if compressed. Fixed and re-run to a clean pass."
+    }
+  ],
+  "verdict": "Intent/kind routing does not reliably beat Paritok's stock defaults. kind_only equals stock everywhere; intent routing is weak (~+9pp must-keep on drift sessions) and inconsistent (reverses on some sessions). Task-relevant retention barely moves, so rel/1k is flat and reflects mostly how hard each arm compressed."
+}

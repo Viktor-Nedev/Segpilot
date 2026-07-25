@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEGPILOT — did routing Paritok compression per-segment help?</title>
+<meta name="description" content="A live measurement of whether routing Paritok compression per-segment helps — plus a real compression demo and nine reproducible findings.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap masthead">
+    <div class="topbar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span class="name">SEGPILOT</span>
+        <span class="built">// live measurement · built with Paritok</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button">theme: system</button>
+    </div>
+    <h1>We measured whether routing Paritok's compression per&#8209;segment helps. It mostly doesn't.</h1>
+    <p class="lede">
+      Most "we optimized X" projects ship the idea and a flattering number. We shipped the idea,
+      then <strong>measured it honestly</strong> across real agent sessions and reported that it does
+      not reliably beat Paritok's stock defaults. Below: the live numbers, a real compression demo you
+      can run on your own text, and nine reproducible findings about Paritok's hosted API.
+    </p>
+    <div class="stats" id="statStrip">
+      <div class="stat"><div class="n">—</div><div class="l">findings</div></div>
+      <div class="stat"><div class="n">—</div><div class="l">sessions measured</div></div>
+      <div class="stat"><div class="n">—</div><div class="l">arms</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">numbers retracted</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="demo-section">
+  <div class="wrap col">
+    <span class="eyebrow">Try it yourself · real Paritok hosted GPU</span>
+    <h2>Paste code, watch the lever from finding #4 work on your own text</h2>
+    <p>
+      This runs two real compressions on Paritok's hosted GPU: <strong>baseline</strong> (no kind, no
+      intent — what the hosted path defaults to) and <strong>SEGPILOT</strong> (kind + intent routed).
+      Rate-limited to protect the project's quota.
+    </p>
+  </div>
+  <div class="wrap col">
+    <div class="demo-panel">
+      <div class="field">
+        <label for="codeInput">Code or text to compress</label>
+        <textarea id="codeInput" maxlength="4000" placeholder="Paste a function, a log excerpt, a stack trace…"></textarea>
+        <div class="presets" id="presetChips"></div>
+        <div class="field hint" id="presetNote" style="margin-top:.3rem"></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="intentInput">Your intent right now</label>
+          <input id="intentInput" type="text" maxlength="300" placeholder="e.g. why does this function raise on negative input">
+        </div>
+        <div class="field" style="max-width:12rem">
+          <label for="kindSelect">Segment kind</label>
+          <select id="kindSelect">
+            <option value="file_read">file_read</option>
+            <option value="log_output">log_output</option>
+            <option value="bash_command">bash_command</option>
+            <option value="assistant_thinking">assistant_thinking</option>
+          </select>
+        </div>
+      </div>
+      <button class="compress-btn" id="compressBtn" type="button">Compress →</button>
+      <div class="status-line" id="statusLine"></div>
+      <div class="result-grid" id="resultGrid" style="display:none">
+        <div class="result-card baseline">
+          <div class="rc-head"><span>baseline (no kind, no intent)</span></div>
+          <div class="rc-stats" id="baselineStats"></div>
+          <pre id="baselineText"></pre>
+        </div>
+        <div class="result-card routed">
+          <div class="rc-head"><span>segpilot (kind + intent routed)</span></div>
+          <div class="rc-stats" id="routedStats"></div>
+          <pre id="routedText"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Step two · the measured result</span>
+    <h2>The result, stated plainly</h2>
+    <p>
+      Five arms isolate what each layer contributes, replayed over identical uncompressed trajectories.
+      <span id="popNote"></span>
+    </p>
+  </div>
+  <div class="wrap col">
+    <div class="tabs" id="popTabs"></div>
+    <div class="verdict-card">
+      <div class="headline" id="verdictHeadline">Loading…</div>
+      <div class="tablewrap"><table class="data" id="armsTable"><tbody><tr><td class="skeleton">loading results…</td></tr></tbody></table></div>
+    </div>
+    <p class="note">Numbers are must-keep retention — Paritok's own training-time definition of content that must survive. It is the axis the arms actually differ on; task-relevant retention saturates.</p>
+  </div>
+</section>
+
+<section id="solve-rate-section" style="display:none">
+  <div class="wrap col">
+    <span class="eyebrow">Live confirmation</span>
+    <h2>Solve rate from real agent runs</h2>
+    <p>Task success (pytest passes) from live agent runs, not replay — the crossover check for the offline signal above.</p>
+    <div class="tablewrap"><table class="data" id="solveRateTable"></table></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Kept in view, not hidden</span>
+    <h2>Numbers we retracted</h2>
+    <p>Twice we reported an encouraging result and had to take it back when the data was cleaned up. Both are kept — the whole project is an argument for measuring instead of trusting the first number.</p>
+    <div class="log" id="correctionsLog"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">The real contribution</span>
+    <h2>Nine findings about Paritok's hosted API</h2>
+    <p>Each is reproducible from the repository, with a runnable check.</p>
+    <ol class="findings" id="findingsList"></ol>
+  </div>
+</section>
+
+<section>
+  <div class="wrap col">
+    <span class="eyebrow">Check it yourself</span>
+    <h2>Reproduce every number</h2>
+    <p>The reference sessions are committed, so the replay reproduces the exact figures above without recording anything new.</p>
+    <pre class="codeblock"><span class="c"># which Paritok parameters actually work</span>
+python -m segpilot.<span class="p">probe</span> --all
+
+<span class="c"># the arms, replayed over the committed sessions</span>
+python -m segpilot.replay.<span class="p">harness</span> --all --suffix __raw \
+  --arms stock,kind_only,intent_only,segpilot,segpilot+guard
+
+<span class="c"># regenerate the report + this site's data</span>
+python -m segpilot.replay.<span class="p">report</span> --out examples/reports/ --json</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>SEGPILOT — an independent measurement of Paritok compression. Not affiliated with Paritok.</span>
+    <div style="display:flex;gap:1.2rem">
+      <a href="https://github.com/Viktor-Nedev/Paritok_Hackathon">Source ↗</a>
+      <a href="https://github.com/Paritok-official/paritok-4b-v1">Built with Paritok ↗</a>
+    </div>
+  </div>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

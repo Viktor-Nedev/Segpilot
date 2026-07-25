@@ -28,7 +28,7 @@ dev = ["pytest>=8.0"]
 segpilot = "segpilot.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["segpilot*", "agent*", "bench*"]
+include = ["segpilot*", "agent*", "bench*", "web*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -225,6 +225,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="session filename suffix (default: __raw references)")
     ap.add_argument("--arms", default=",".join(COMPRESSING_ARMS))
     ap.add_argument("--out", default="examples/reports")
+    ap.add_argument("--json", dest="json_path", nargs="?", const="web/results.json",
+                    default=None,
+                    help="also write a JSON report (default web/results.json if no path given)")
     args = ap.parse_args(argv)
 
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
@@ -243,6 +246,12 @@ def main(argv: list[str] | None = None) -> int:
     written = write_report(totals, replays, arms, out_dir=args.out)
     for kind, path in written.items():
         print(f"  wrote {kind}: {path}")
+
+    if args.json_path:
+        from segpilot.replay.json_report import write_json_report
+
+        json_path = write_json_report(totals, replays, arms, out_path=args.json_path)
+        print(f"  wrote json: {json_path}")
     return 0
 
 

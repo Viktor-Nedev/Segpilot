@@ -1,0 +1,32 @@
+# Render.com deploy config for the SEGPILOT live site.
+#
+# Connect this repo on Render (New -> Blueprint, or New -> Web Service pointing
+# at this repo) and it picks up this file automatically. The only manual step
+# is setting PARITOK_API_KEY as a secret in the Render dashboard -- it is never
+# committed (see .gitignore) and `sync: false` below means Render won't try to
+# read it from anywhere but its own dashboard.
+#
+# Free tier: single instance, sleeps after 15 min idle, ~30-50s cold start on
+# the next request. The frontend's job-polling UI already accounts for slow
+# responses (it was built around the hosted GPU's own cold starts).
+
+services:
+  - type: web
+    name: segpilot
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -e .
+    startCommand: uvicorn web.backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      - key: PARITOK_API_KEY
+        sync: false
+      - key: SEGPILOT_PER_IP_MAX
+        value: "5"
+      - key: SEGPILOT_PER_IP_WINDOW_S
+        value: "60"
+      - key: SEGPILOT_DAILY_MAX
+        value: "150"
