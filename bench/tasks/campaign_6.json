@@ -1,0 +1,16 @@
+{
+  "id": "campaign_6",
+  "title": "Full-suite audit: pre-discount tax, money precision, and reconciliation sign",
+  "instruction": "Several ledger tests are failing across the suite. Fix all of them. One bug taxes the pre-discount subtotal instead of the discounted amount, overcharging customers; one bug affects money rounding precision everywhere in the package; one bug makes reconciliation miss discrepancies where the settlement provider thinks we are owed more than we recorded. Read the relevant modules before editing. Do not change the tests. Run the full tests/ suite until everything passes.",
+  "seeds": [
+    {"file": "ledger/pricing.py", "find": "    total = apply_tax(discounted, jurisdiction)", "replace": "    total = apply_tax(subtotal, jurisdiction)"},
+    {"file": "ledger/entries.py", "find": "CENTS = Decimal(\"0.01\")", "replace": "CENTS = Decimal(\"0.1\")"},
+    {"file": "ledger/reconcile.py", "find": "        if abs(delta) > tolerance:", "replace": "        if delta > tolerance:"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/pricing.py", "ledger/entries.py", "ledger/reconcile.py"],
+    "why_drift": "The CENTS bug is a shared constant whose effect surfaces across the whole package (finding it means grepping the codebase), forcing broad context accumulation before the agent narrows to the two other, more local bugs.",
+    "must_appear": ["price_basket", "apply_tax", "discounted", "subtotal", "discount", "CENTS", "Decimal", "quantize", "find_discrepancies", "delta", "tolerance", "settlement"]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "campaign_7",
+  "title": "Two-bug audit: discount boundary and money precision (short session)",
+  "instruction": "Two ledger tests are failing. Fix both. One bug makes orders exactly at a discount threshold miss the discount; one bug affects money rounding precision across the package. Read the relevant modules before editing. Do not change the tests. Run the full tests/ suite until it is green.",
+  "seeds": [
+    {"file": "ledger/pricing.py", "find": "            if subtotal >= threshold:", "replace": "            if subtotal > threshold:"},
+    {"file": "ledger/entries.py", "find": "CENTS = Decimal(\"0.01\")", "replace": "CENTS = Decimal(\"0.1\")"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/pricing.py", "ledger/entries.py"],
+    "why_drift": "Deliberately the shortest campaign (2 bugs, 2 modules) — tests whether drift effects, if any, need a minimum session length to appear, by bracketing the 3-4 bug campaigns with a shorter one.",
+    "must_appear": ["rate_for", "threshold", "subtotal", "DiscountPolicy", "CENTS", "Decimal", "quantize"]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "campaign_4",
+  "title": "Full-suite audit: discount boundary, float parsing, and reconciliation sign",
+  "instruction": "Several ledger tests are failing across the suite. Fix all of them. One bug makes orders exactly at a discount threshold miss the discount; one reintroduces binary float error when parsing amounts; one makes reconciliation miss discrepancies where the settlement provider thinks we are owed more than we recorded. Read the relevant modules before editing. Do not change the tests. Run the full tests/ suite until everything passes.",
+  "seeds": [
+    {"file": "ledger/pricing.py", "find": "            if subtotal >= threshold:", "replace": "            if subtotal > threshold:"},
+    {"file": "ledger/entries.py", "find": "        return Decimal(str(raw))", "replace": "        return Decimal(raw)"},
+    {"file": "ledger/reconcile.py", "find": "        if abs(delta) > tolerance:", "replace": "        if delta > tolerance:"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/pricing.py", "ledger/entries.py", "ledger/reconcile.py"],
+    "why_drift": "Three unrelated bugs across all three modules, new combination not used in campaigns 1-3. By the time the agent reaches the reconciliation bug, the pricing and parsing context read earlier is stale.",
+    "must_appear": ["rate_for", "threshold", "subtotal", "DiscountPolicy", "parse_amount", "Decimal", "float", "str", "find_discrepancies", "delta", "tolerance", "settlement"]
+  }
+}

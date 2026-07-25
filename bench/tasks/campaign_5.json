@@ -1,0 +1,16 @@
+{
+  "id": "campaign_5",
+  "title": "Full-suite audit: discount tier ordering, float parsing, and reconciliation sign",
+  "instruction": "Multiple ledger tests are failing. Fix all of them. One bug evaluates discount tiers lowest-first, so large orders get the smaller discount instead of the larger one; one reintroduces binary float error when parsing amounts; one makes refunds and fees increase the reconciled balance instead of reducing it. Read the relevant modules before editing. Do not change the tests. Run the full tests/ suite until it is green.",
+  "seeds": [
+    {"file": "ledger/pricing.py", "find": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=True)", "replace": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=False)"},
+    {"file": "ledger/entries.py", "find": "        return Decimal(str(raw))", "replace": "        return Decimal(raw)"},
+    {"file": "ledger/reconcile.py", "find": "        total += entry.signed_amount", "replace": "        total += entry.amount"}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/pricing.py", "ledger/entries.py", "ledger/reconcile.py"],
+    "why_drift": "New combination spanning all three modules. The discount-tier fix requires connecting __init__ (where tiers are sorted) to rate_for; by the time the agent gets there, the parsing and reconciliation context is stale in the other direction too.",
+    "must_appear": ["tiers", "sorted", "reverse", "rate_for", "DiscountPolicy", "parse_amount", "Decimal", "float", "str", "signed_amount", "reconcile_totals", "NEGATIVE_KINDS"]
+  }
+}

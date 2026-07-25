@@ -1,0 +1,17 @@
+{
+  "id": "campaign_8",
+  "title": "Four-bug audit: reconciliation sign and three pricing bugs (long session)",
+  "instruction": "Four ledger tests are failing across the suite. Fix all of them. One bug makes refunds and fees increase the reconciled balance instead of reducing it. Three more are in pricing: pre-discount tax is applied to the wrong amount, discount tiers are evaluated in the wrong order, and the default tax jurisdiction is tax-free. Read the relevant modules before editing each one. Do not change the tests. Run the full tests/ suite until everything passes.",
+  "seeds": [
+    {"file": "ledger/reconcile.py", "find": "        total += entry.signed_amount", "replace": "        total += entry.amount"},
+    {"file": "ledger/pricing.py", "find": "    total = apply_tax(discounted, jurisdiction)", "replace": "    total = apply_tax(subtotal, jurisdiction)"},
+    {"file": "ledger/pricing.py", "find": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=True)", "replace": "        self.tiers = sorted(tiers or [], key=lambda t: t[0], reverse=False)"},
+    {"file": "ledger/pricing.py", "find": "DEFAULT_JURISDICTION = \"US-CA\"", "replace": "DEFAULT_JURISDICTION = \"US-OR\""}
+  ],
+  "test_command": ["-m", "pytest", "tests/", "-q"],
+  "ground_truth": {
+    "modules": ["ledger/reconcile.py", "ledger/pricing.py"],
+    "why_drift": "Deliberately the longest campaign (4 bugs). Three of the four share pricing.py but are otherwise unrelated, testing whether drift within a single file compounds differently than drift across files.",
+    "must_appear": ["signed_amount", "reconcile_totals", "NEGATIVE_KINDS", "price_basket", "apply_tax", "discounted", "tiers", "sorted", "rate_for", "DEFAULT_JURISDICTION", "US-CA"]
+  }
+}
