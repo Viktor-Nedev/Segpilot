@@ -9,6 +9,12 @@ compression per-segment worth it for your workload?**
 Built with [Paritok](https://github.com/Paritok-official/paritok-4b-v1), running
 on Paritok's hosted GPU server.
 
+**🔬 Live site: [segpilot.onrender.com](https://segpilot.onrender.com/)** —
+dashboard + a real compression demo (paste your own code, get two real Paritok
+hosted-GPU compressions back). Free-tier host; if it's asleep, first request
+takes ~30–50s to wake. Static mirror: [Artifact
+page](https://claude.ai/code/artifact/c4b25561-75f6-4434-8466-5fe9f92a158f).
+
 ---
 
 ## The one-paragraph version

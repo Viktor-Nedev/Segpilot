@@ -1,8 +1,16 @@
 # Devpost — text description (ready to paste)
 
-**Project URL:** https://claude.ai/code/artifact/c4b25561-75f6-4434-8466-5fe9f92a158f
+**Project URL:** https://segpilot.onrender.com/ — live dashboard + a real
+compression demo running on Paritok's hosted GPU.
+**Fallback URL** (in case Render's free tier is asleep or down during judging):
+https://claude.ai/code/artifact/c4b25561-75f6-4434-8466-5fe9f92a158f — a static
+mirror of the same findings/results, always available.
 **Repository:** https://github.com/Viktor-Nedev/Paritok_Hackathon
 **Paritok account email:** viktornedev08@gmail.com
+
+> Note: the live site is a Render free-tier instance. It sleeps after ~15 min
+> idle and takes ~30–50s to wake on the first request — if it looks slow,
+> that's why, not a bug. It self-warmed to ~4s response times in our own check.
 
 ---
 
@@ -22,6 +30,13 @@ skip: an honest measurement of whether it actually helps.** It's a kind engine, 
 phase-aware intent engine, a retention guard, a five-arm benchmark, and a
 reproducible replay harness — built so the claim could be checked, not just
 asserted.
+
+It's also a **live site** (segpilot.onrender.com), not just a writeup: a
+dashboard that always reflects the latest committed measurement (served from
+the same JSON the replay harness produces, never hand-typed), and a real
+compression demo — paste your own code, get two real Paritok hosted-GPU
+compressions back (baseline vs SEGPILOT-routed) and watch the intent lever
+work, or not, on your own text.
 
 ### What we found
 
