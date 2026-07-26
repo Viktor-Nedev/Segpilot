@@ -14,14 +14,14 @@
 <text x="62" y="144.0" fill="#64748b" font-size="11" text-anchor="end">75%</text>
 <line x1="70" y1="70.0" x2="570" y2="70.0" stroke="#1e293b"/>
 <text x="62" y="74.0" fill="#64748b" font-size="11" text-anchor="end">100%</text>
-<circle cx="414.8" cy="116.9" r="7" fill="#94a3b8"/>
-<text x="425.8" y="120.9" fill="#94a3b8" font-size="12">stock</text>
-<circle cx="408.7" cy="116.9" r="7" fill="#38bdf8"/>
-<text x="419.7" y="120.9" fill="#38bdf8" font-size="12">kind_only</text>
-<circle cx="410.1" cy="91.1" r="7" fill="#a78bfa"/>
-<text x="421.1" y="95.1" fill="#a78bfa" font-size="12">intent_only</text>
-<circle cx="393.9" cy="92.7" r="7" fill="#34d399"/>
-<text x="404.9" y="96.7" fill="#34d399" font-size="12">segpilot</text>
-<circle cx="524.5" cy="75.8" r="7" fill="#fbbf24"/>
-<text x="535.5" y="79.8" fill="#fbbf24" font-size="12">segpilot+guard</text>
+<circle cx="445.3" cy="111.1" r="7" fill="#94a3b8"/>
+<text x="456.3" y="115.1" fill="#94a3b8" font-size="12">stock</text>
+<circle cx="438.2" cy="111.1" r="7" fill="#38bdf8"/>
+<text x="449.2" y="115.1" fill="#38bdf8" font-size="12">kind_only</text>
+<circle cx="438.2" cy="88.8" r="7" fill="#a78bfa"/>
+<text x="449.2" y="92.8" fill="#a78bfa" font-size="12">intent_only</text>
+<circle cx="426.1" cy="90.0" r="7" fill="#34d399"/>
+<text x="437.1" y="94.0" fill="#34d399" font-size="12">segpilot</text>
+<circle cx="524.5" cy="77.2" r="7" fill="#fbbf24"/>
+<text x="535.5" y="81.2" fill="#fbbf24" font-size="12">segpilot+guard</text>
 </svg>

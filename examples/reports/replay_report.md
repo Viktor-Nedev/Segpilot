@@ -1,18 +1,18 @@
 # SEGPILOT replay report
 
-Offline replay of **7 recorded session(s)** under 5 compression arms. Compression ran on Paritok's hosted GPU; every arm was applied to identical, uncompressed reference content.
+Offline replay of **9 recorded session(s)** under 5 compression arms. Compression ran on Paritok's hosted GPU; every arm was applied to identical, uncompressed reference content.
 
 > **Verdict (see [results.md](../../docs/results.md)):** intent/kind routing does not reliably beat stock. `kind_only` equals `stock` everywhere; the only mover is must-keep retention under intent, and it is small (+~9pp mean) and inconsistent (it reverses on one of three drift sessions). `task ret.` is essentially constant across arms, so `rel/1k` is flat and reflects only how hard each arm compressed. Read must-keep retention as the discriminating axis, not rel/1k.
 
-## Aggregate — campaign (3 session(s))
+## Aggregate — campaign (5 session(s))
 
 | arm | ratio | saved | must-keep ret. | task ret. | rel/1k | Δ vs stock | guard trips |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| `stock` | 0.471 | 53% | 81% | 95% | 0.08 |  | 0 |
-| `kind_only` | 0.456 | 54% | 81% | 95% | 0.08 | 1.03× | 0 |
-| `intent_only` | 0.463 | 54% | 93% | 95% | 0.08 | 1.02× | 0 |
-| `segpilot` | 0.439 | 56% | 93% | 95% | 0.09 | 1.07× | 0 |
-| `segpilot+guard` | 0.610 | 39% | 97% | 95% | 0.06 | 0.77× | 4 |
+| `stock` | 0.500 | 50% | 84% | 98% | 0.05 |  | 0 |
+| `kind_only` | 0.486 | 51% | 84% | 98% | 0.05 | 1.03× | 0 |
+| `intent_only` | 0.489 | 51% | 94% | 98% | 0.05 | 1.02× | 0 |
+| `segpilot` | 0.474 | 53% | 94% | 98% | 0.05 | 1.06× | 0 |
+| `segpilot+guard` | 0.587 | 41% | 97% | 98% | 0.04 | 0.85× | 4 |
 
 ## Aggregate — single-bug (4 session(s))
 
@@ -28,11 +28,11 @@ Offline replay of **7 recorded session(s)** under 5 compression arms. Compressio
 
 | arm | ratio | saved | must-keep ret. | task ret. | rel/1k | Δ vs stock | guard trips |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| `stock` | 0.490 | 51% | 83% | 92% | 0.06 |  | 0 |
-| `kind_only` | 0.481 | 52% | 83% | 92% | 0.06 | 1.02× | 0 |
-| `intent_only` | 0.483 | 52% | 92% | 92% | 0.06 | 1.01× | 0 |
-| `segpilot` | 0.460 | 54% | 92% | 92% | 0.06 | 1.06× | 0 |
-| `segpilot+guard` | 0.646 | 35% | 98% | 95% | 0.04 | 0.78× | 6 |
+| `stock` | 0.509 | 49% | 85% | 95% | 0.04 |  | 0 |
+| `kind_only` | 0.499 | 50% | 85% | 95% | 0.04 | 1.02× | 0 |
+| `intent_only` | 0.499 | 50% | 93% | 95% | 0.04 | 1.02× | 0 |
+| `segpilot` | 0.483 | 52% | 93% | 95% | 0.04 | 1.05× | 0 |
+| `segpilot+guard` | 0.616 | 38% | 97% | 97% | 0.03 | 0.84× | 6 |
 
 > **must-keep ret.** = fraction of Paritok's own must-keep spans (paths, identifiers, error classes) surviving compression — the axis on which the arms actually differ. **rel/1k** = task-relevant tokens retained per 1000 spent; it is flat here because task retention is constant across arms, so it measures only compression aggressiveness. Campaign sessions are the drift test; single-bug sessions are the no-drift control.
 
@@ -75,5 +75,15 @@ Offline replay of **7 recorded session(s)** under 5 compression arms. Compressio
 | campaign_3 | `intent_only` | 0.552 | 86% | 0.18 |
 | campaign_3 | `segpilot` | 0.551 | 86% | 0.18 |
 | campaign_3 | `segpilot+guard` | 0.661 | 86% | 0.15 |
+| campaign_4 | `stock` | 0.625 | 100% | 0.24 |
+| campaign_4 | `kind_only` | 0.604 | 100% | 0.25 |
+| campaign_4 | `intent_only` | 0.562 | 100% | 0.27 |
+| campaign_4 | `segpilot` | 0.562 | 100% | 0.27 |
+| campaign_4 | `segpilot+guard` | 0.562 | 100% | 0.27 |
+| campaign_5 | `stock` | 0.488 | 100% | 0.33 |
+| campaign_5 | `kind_only` | 0.485 | 100% | 0.33 |
+| campaign_5 | `intent_only` | 0.519 | 100% | 0.31 |
+| campaign_5 | `segpilot` | 0.520 | 100% | 0.31 |
+| campaign_5 | `segpilot+guard` | 0.520 | 100% | 0.31 |
 
 ![Pareto](pareto.svg)

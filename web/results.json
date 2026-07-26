@@ -1,5 +1,5 @@
 {
-  "generated_from_sessions": 7,
+  "generated_from_sessions": 9,
   "arms": [
     "stock",
     "kind_only",
@@ -10,128 +10,128 @@
   "aggregate_all": [
     {
       "arm": "stock",
-      "ratio": 0.49,
-      "saving_pct": 0.51,
-      "must_keep_retention": 0.832,
-      "task_retention": 0.923,
-      "rel_per_1k": 0.057,
+      "ratio": 0.509,
+      "saving_pct": 0.491,
+      "must_keep_retention": 0.853,
+      "task_retention": 0.952,
+      "rel_per_1k": 0.041,
       "guard_trips": 0,
-      "sessions": 7,
-      "original_tokens": 32876,
-      "compressed_tokens": 16100
+      "sessions": 9,
+      "original_tokens": 45687,
+      "compressed_tokens": 23248
     },
     {
       "arm": "kind_only",
-      "ratio": 0.481,
-      "saving_pct": 0.519,
-      "must_keep_retention": 0.832,
-      "task_retention": 0.923,
-      "rel_per_1k": 0.058,
+      "ratio": 0.499,
+      "saving_pct": 0.501,
+      "must_keep_retention": 0.853,
+      "task_retention": 0.952,
+      "rel_per_1k": 0.042,
       "guard_trips": 0,
-      "sessions": 7,
-      "original_tokens": 32876,
-      "compressed_tokens": 15812
+      "sessions": 9,
+      "original_tokens": 45687,
+      "compressed_tokens": 22807
     },
     {
       "arm": "intent_only",
-      "ratio": 0.483,
-      "saving_pct": 0.517,
-      "must_keep_retention": 0.925,
-      "task_retention": 0.923,
-      "rel_per_1k": 0.058,
+      "ratio": 0.499,
+      "saving_pct": 0.501,
+      "must_keep_retention": 0.933,
+      "task_retention": 0.952,
+      "rel_per_1k": 0.042,
       "guard_trips": 0,
-      "sessions": 7,
-      "original_tokens": 32876,
-      "compressed_tokens": 15877
+      "sessions": 9,
+      "original_tokens": 45687,
+      "compressed_tokens": 22806
     },
     {
       "arm": "segpilot",
-      "ratio": 0.46,
-      "saving_pct": 0.54,
-      "must_keep_retention": 0.919,
-      "task_retention": 0.923,
-      "rel_per_1k": 0.061,
+      "ratio": 0.483,
+      "saving_pct": 0.517,
+      "must_keep_retention": 0.929,
+      "task_retention": 0.952,
+      "rel_per_1k": 0.043,
       "guard_trips": 0,
-      "sessions": 7,
-      "original_tokens": 32876,
-      "compressed_tokens": 15123
+      "sessions": 9,
+      "original_tokens": 45687,
+      "compressed_tokens": 22057
     },
     {
       "arm": "segpilot+guard",
-      "ratio": 0.646,
-      "saving_pct": 0.354,
-      "must_keep_retention": 0.979,
-      "task_retention": 0.949,
-      "rel_per_1k": 0.045,
+      "ratio": 0.616,
+      "saving_pct": 0.384,
+      "must_keep_retention": 0.974,
+      "task_retention": 0.968,
+      "rel_per_1k": 0.034,
       "guard_trips": 6,
-      "sessions": 7,
-      "original_tokens": 32876,
-      "compressed_tokens": 21222
+      "sessions": 9,
+      "original_tokens": 45687,
+      "compressed_tokens": 28156
     }
   ],
   "populations": {
     "campaign": {
-      "session_count": 3,
+      "session_count": 5,
       "arms": [
         {
           "arm": "stock",
-          "ratio": 0.471,
-          "saving_pct": 0.529,
-          "must_keep_retention": 0.814,
-          "task_retention": 0.952,
-          "rel_per_1k": 0.081,
+          "ratio": 0.5,
+          "saving_pct": 0.5,
+          "must_keep_retention": 0.844,
+          "task_retention": 0.978,
+          "rel_per_1k": 0.052,
           "guard_trips": 0,
-          "sessions": 3,
-          "original_tokens": 25126,
-          "compressed_tokens": 11822
+          "sessions": 5,
+          "original_tokens": 37937,
+          "compressed_tokens": 18970
         },
         {
           "arm": "kind_only",
-          "ratio": 0.456,
-          "saving_pct": 0.544,
-          "must_keep_retention": 0.807,
-          "task_retention": 0.952,
-          "rel_per_1k": 0.083,
+          "ratio": 0.486,
+          "saving_pct": 0.514,
+          "must_keep_retention": 0.839,
+          "task_retention": 0.978,
+          "rel_per_1k": 0.053,
           "guard_trips": 0,
-          "sessions": 3,
-          "original_tokens": 25126,
-          "compressed_tokens": 11447
+          "sessions": 5,
+          "original_tokens": 37937,
+          "compressed_tokens": 18442
         },
         {
           "arm": "intent_only",
-          "ratio": 0.463,
-          "saving_pct": 0.537,
-          "must_keep_retention": 0.928,
-          "task_retention": 0.952,
-          "rel_per_1k": 0.082,
+          "ratio": 0.489,
+          "saving_pct": 0.511,
+          "must_keep_retention": 0.937,
+          "task_retention": 0.978,
+          "rel_per_1k": 0.053,
           "guard_trips": 0,
-          "sessions": 3,
-          "original_tokens": 25126,
-          "compressed_tokens": 11624
+          "sessions": 5,
+          "original_tokens": 37937,
+          "compressed_tokens": 18553
         },
         {
           "arm": "segpilot",
-          "ratio": 0.439,
-          "saving_pct": 0.561,
-          "must_keep_retention": 0.926,
-          "task_retention": 0.952,
-          "rel_per_1k": 0.086,
+          "ratio": 0.474,
+          "saving_pct": 0.526,
+          "must_keep_retention": 0.935,
+          "task_retention": 0.978,
+          "rel_per_1k": 0.054,
           "guard_trips": 0,
-          "sessions": 3,
-          "original_tokens": 25126,
-          "compressed_tokens": 11040
+          "sessions": 5,
+          "original_tokens": 37937,
+          "compressed_tokens": 17974
         },
         {
           "arm": "segpilot+guard",
-          "ratio": 0.61,
-          "saving_pct": 0.39,
-          "must_keep_retention": 0.974,
-          "task_retention": 0.952,
-          "rel_per_1k": 0.062,
+          "ratio": 0.587,
+          "saving_pct": 0.413,
+          "must_keep_retention": 0.97,
+          "task_retention": 0.978,
+          "rel_per_1k": 0.044,
           "guard_trips": 4,
-          "sessions": 3,
-          "original_tokens": 25126,
-          "compressed_tokens": 15321
+          "sessions": 5,
+          "original_tokens": 37937,
+          "compressed_tokens": 22255
         }
       ]
     },
@@ -661,6 +661,138 @@
           "sessions": 1,
           "original_tokens": 8470,
           "compressed_tokens": 5598
+        }
+      ]
+    },
+    {
+      "task_id": "campaign_4",
+      "population": "campaign",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.625,
+          "saving_pct": 0.375,
+          "must_keep_retention": 0.977,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.244,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6551,
+          "compressed_tokens": 4093
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.604,
+          "saving_pct": 0.396,
+          "must_keep_retention": 0.977,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.253,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6551,
+          "compressed_tokens": 3960
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.562,
+          "saving_pct": 0.438,
+          "must_keep_retention": 0.966,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.272,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6551,
+          "compressed_tokens": 3680
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.562,
+          "saving_pct": 0.438,
+          "must_keep_retention": 0.966,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.272,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6551,
+          "compressed_tokens": 3680
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.562,
+          "saving_pct": 0.438,
+          "must_keep_retention": 0.966,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.272,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6551,
+          "compressed_tokens": 3680
+        }
+      ]
+    },
+    {
+      "task_id": "campaign_5",
+      "population": "campaign",
+      "arms": [
+        {
+          "arm": "stock",
+          "ratio": 0.488,
+          "saving_pct": 0.512,
+          "must_keep_retention": 0.855,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.327,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6260,
+          "compressed_tokens": 3055
+        },
+        {
+          "arm": "kind_only",
+          "ratio": 0.485,
+          "saving_pct": 0.515,
+          "must_keep_retention": 0.855,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.329,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6260,
+          "compressed_tokens": 3035
+        },
+        {
+          "arm": "intent_only",
+          "ratio": 0.519,
+          "saving_pct": 0.481,
+          "must_keep_retention": 0.952,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.308,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6260,
+          "compressed_tokens": 3249
+        },
+        {
+          "arm": "segpilot",
+          "ratio": 0.52,
+          "saving_pct": 0.48,
+          "must_keep_retention": 0.952,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.307,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6260,
+          "compressed_tokens": 3254
+        },
+        {
+          "arm": "segpilot+guard",
+          "ratio": 0.52,
+          "saving_pct": 0.48,
+          "must_keep_retention": 0.952,
+          "task_retention": 1.0,
+          "rel_per_1k": 0.307,
+          "guard_trips": 0,
+          "sessions": 1,
+          "original_tokens": 6260,
+          "compressed_tokens": 3254
         }
       ]
     }
