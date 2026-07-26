@@ -23,10 +23,12 @@ from pathlib import Path
 from bench.harness import Task, list_tasks, load_task, prepare_workdir, run_tests
 from segpilot.compressor import ARMS, Arm, SegpilotCompressor
 from segpilot.config import SegpilotConfig
+from segpilot.policy.adaptive import AdaptiveController
 from segpilot.policy.cache import CompressionCache
+from segpilot.policy.shadow import ShadowStore
 from segpilot.upstream.gemini import GeminiUpstream, UpstreamError
 
-from .tools import TOOL_SCHEMAS, execute
+from .tools import EXPAND_CONTEXT_SCHEMA, TOOL_SCHEMAS, execute
 
 SYSTEM_PROMPT = """You are a precise software engineer working in a Python repository.
 
@@ -64,6 +66,7 @@ class TurnRecord:
     completion_tokens: int = 0
     tool_calls: list[str] = field(default_factory=list)
     elapsed_s: float = 0.0
+    regrets: int = 0   # expand_context calls this turn (adaptive arm only)
 
 
 @dataclass
@@ -79,6 +82,7 @@ class AgentResult:
     wall_s: float
     stop_reason: str
     session_path: str
+    regrets: int = 0   # expand_context calls total (adaptive arm only)
 
     @property
     def saved_tokens(self) -> int:
@@ -124,6 +128,13 @@ class RuffAgent:
         t0 = time.time()
         stop_reason = "max_turns"
 
+        # expand_context is only offered on the adaptive arm -- see the note by
+        # EXPAND_CONTEXT_SCHEMA in tools.py for why every other arm's tool
+        # surface (including the already-recorded N=8 comparison set) must stay
+        # exactly as it was.
+        is_adaptive = self.arm.controller is not None
+        tools_for_call = TOOL_SCHEMAS + ([EXPAND_CONTEXT_SCHEMA] if is_adaptive else [])
+
         for turn in range(1, max_turns + 1):
             # Compression happens here, on the real history, before the call.
             compressed_messages, outcome = self.compressor.apply(self.messages, self.arm)
@@ -141,7 +152,7 @@ class RuffAgent:
             )
 
             try:
-                result = self.upstream.complete(compressed_messages, tools=TOOL_SCHEMAS)
+                result = self.upstream.complete(compressed_messages, tools=tools_for_call)
             except UpstreamError as exc:
                 stop_reason = f"upstream_error: {exc}"
                 self._log(f"  ! {stop_reason}")
@@ -180,7 +191,13 @@ class RuffAgent:
                     args = json.loads(fn.get("arguments") or "{}")
                 except (ValueError, TypeError):
                     args = {}
-                output, ok = execute(self.workdir, name, args)
+
+                if name == "expand_context":
+                    output = self._resolve_expand_context(args.get("shadow_id", ""), record)
+                    ok = True
+                else:
+                    output, ok = execute(self.workdir, name, args)
+
                 record.tool_calls.append(name)
                 self._log(f"        {name}({', '.join(f'{k}={v!r}'[:40] for k, v in args.items())}) "
                           f"-> {len(output)} chars{'' if ok else ' [error]'}")
@@ -207,15 +224,34 @@ class RuffAgent:
             wall_s=round(wall, 1),
             stop_reason=stop_reason,
             session_path=str(self.session_path),
+            regrets=sum(t.regrets for t in self.turns),
         )
         self._write_session(result, test_output)
         return result
+
+    def _resolve_expand_context(self, shadow_id: str, record: TurnRecord) -> str:
+        """Handle an expand_context call: resolve the ref, record the regret.
+
+        This IS the regret signal the adaptive controller learns from -- the
+        model asking for something back means whichever (kind) bucket produced
+        that compression was too aggressive for this segment. See
+        segpilot/policy/adaptive.py for how that observation is used.
+        """
+        shadow = self.compressor.shadow
+        entry = shadow.get(shadow_id) if shadow else None
+        if entry is None:
+            return f"error: no content found for reference id {shadow_id!r}"
+
+        record.regrets += 1
+        if self.arm.controller is not None:
+            self.arm.controller.record_regret(entry.kind)
+        return entry.original
 
     def _write_session(self, result: AgentResult, test_output: str) -> None:
         """Persist the full session so it can be replayed offline forever."""
         self.session_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.session_path, "w", encoding="utf-8") as f:
-            f.write(json.dumps({
+            meta = {
                 "type": "meta",
                 "task_id": self.task.id,
                 "arm": self.arm.name,
@@ -223,7 +259,12 @@ class RuffAgent:
                 "ground_truth": self.task.ground_truth,
                 "result": asdict(result),
                 "test_output_tail": test_output[-2000:],
-            }, ensure_ascii=False) + "\n")
+            }
+            if self.arm.controller is not None:
+                # Auditable record of what the controller learned this
+                # session: per-kind observations, regrets, and transitions.
+                meta["adaptive_snapshot"] = self.arm.controller.snapshot()
+            f.write(json.dumps(meta, ensure_ascii=False) + "\n")
             # The uncompressed message history is what replay needs: it lets any
             # arm be applied after the fact to exactly the same content.
             f.write(json.dumps({"type": "messages", "messages": self.messages},
@@ -251,6 +292,13 @@ def main(argv: list[str] | None = None) -> int:
 
     task = load_task(args.task)
     arm = ARMS[args.arm]
+    if arm.name == "adaptive":
+        # AdaptiveController is stateful and learns within a single session --
+        # never reuse the shared ARMS template's controller (it has none; this
+        # is where a fresh one gets attached, once, for this run only).
+        import dataclasses
+
+        arm = dataclasses.replace(arm, controller=AdaptiveController())
     workdir = prepare_workdir(task)
     session_path = Path(args.sessions_dir) / f"{task.id}__{arm.name}.jsonl"
 
@@ -266,7 +314,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         agent = RuffAgent(
             workdir=workdir, task=task, config=cfg, arm=arm,
-            compressor=SegpilotCompressor(cfg, cache=cache),
+            compressor=SegpilotCompressor(cfg, cache=cache, shadow=ShadowStore()),
             upstream=GeminiUpstream(cfg.upstream),
             session_path=session_path, verbose=not args.quiet,
         )
@@ -283,6 +331,11 @@ def main(argv: list[str] | None = None) -> int:
           f"tokens (saved {result.saved_tokens}, ratio {result.ratio:.3f})")
     print(f"  billed prompt : {result.billed_prompt_tokens}")
     print(f"  wall          : {result.wall_s}s")
+    if arm.controller is not None:
+        print(f"  regrets       : {result.regrets}")
+        for kind, b in arm.controller.snapshot().items():
+            print(f"    {kind:<20} {b['level']:<12} obs={b['observations']:<3} "
+                  f"regrets={b['regrets']} rate={b['regret_rate']:.2f}")
     print(f"  session       : {result.session_path}")
     print("=" * 62)
     return 0 if result.solved else 2

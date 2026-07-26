@@ -223,3 +223,158 @@ def test_cache_distinguishes_arms_unlike_paritoks():
         cache.close()
     finally:
         os.unlink(path)
+
+
+class RefTaggingFakeStrategy:
+    """Like FakeStrategy, but tags output the way the real hosted GPU does:
+    [REF:<hex of content>] <head> -- so shadow-store tests can extract a real id."""
+
+    def compress(self, content, *, query=None, kind=None, **kw):
+        import hashlib
+        sid = hashlib.sha256(content.encode()).hexdigest()[:16]
+        head = content.split("\n", 1)[0]
+        return f"[REF:{sid}] {head}"
+
+
+def test_compress_segment_populates_shadow_store_on_fresh_compression():
+    from segpilot.policy.shadow import ShadowStore
+
+    shadow = ShadowStore()
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=RefTaggingFakeStrategy(), shadow=shadow)
+    compressed, cache_hit = comp.compress_segment(BIG_FILE, kind="file_read", intent="foo")
+
+    assert cache_hit is False
+    assert len(shadow) == 1
+    sid = compressed.split("]")[0].removeprefix("[REF:")
+    entry = shadow.get(sid)
+    assert entry.original == BIG_FILE
+    assert entry.kind == "file_read"
+
+
+def test_compress_segment_repopulates_shadow_store_on_cache_hit():
+    """A compression served from the (cross-session) cache must still land in
+    THIS session's (in-memory, per-session) shadow store -- otherwise a live
+    adaptive session that hits a warm cache could never resolve its own refs."""
+    from segpilot.policy.cache import CompressionCache
+    from segpilot.policy.shadow import ShadowStore
+    import tempfile, os
+
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    try:
+        cache = CompressionCache(path)
+        strategy = RefTaggingFakeStrategy()
+
+        # First "session": populates the disk cache, fresh shadow store.
+        shadow_a = ShadowStore()
+        comp_a = SegpilotCompressor(_cfg(), cache=cache, strategy=strategy, shadow=shadow_a)
+        compressed, hit_a = comp_a.compress_segment(BIG_FILE, kind="file_read", intent="foo")
+        assert hit_a is False
+        assert len(shadow_a) == 1
+
+        # Second "session": brand-new (empty) shadow store, but the cache is warm.
+        shadow_b = ShadowStore()
+        comp_b = SegpilotCompressor(_cfg(), cache=cache, strategy=strategy, shadow=shadow_b)
+        compressed_2, hit_b = comp_b.compress_segment(BIG_FILE, kind="file_read", intent="foo")
+
+        assert hit_b is True                    # served from cache, not re-compressed
+        assert compressed_2 == compressed
+        assert len(shadow_b) == 1                # but still resolvable in THIS session
+        sid = compressed_2.split("]")[0].removeprefix("[REF:")
+        assert shadow_b.get(sid).original == BIG_FILE
+        cache.close()
+    finally:
+        os.unlink(path)
+
+
+def test_compress_segment_without_shadow_store_does_not_error():
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=RefTaggingFakeStrategy(), shadow=None)
+    compressed, _ = comp.compress_segment(BIG_FILE, kind="file_read", intent="foo")
+    assert compressed.startswith("[REF:")
+
+
+# ---- adaptive arm ---------------------------------------------------------
+
+def test_adaptive_starts_conservative_sends_no_kind_or_intent():
+    """A fresh controller has seen nothing, so every bucket is conservative:
+    the adaptive arm must behave exactly like stock at the very start."""
+    import dataclasses
+    from segpilot.policy.adaptive import AdaptiveController
+
+    controller = AdaptiveController()
+    adaptive_arm = dataclasses.replace(ARMS["adaptive"], controller=controller)
+    fake = FakeStrategy()
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=fake)
+
+    comp.process(_session(), adaptive_arm)
+
+    assert all(c["kind"] is None for c in fake.calls)
+    assert all(not c["query"] for c in fake.calls)
+
+
+def test_adaptive_records_compression_per_segment():
+    import dataclasses
+    from segpilot.policy.adaptive import AdaptiveController
+
+    controller = AdaptiveController()
+    adaptive_arm = dataclasses.replace(ARMS["adaptive"], controller=controller)
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=FakeStrategy())
+
+    outcome = comp.process(_session(), adaptive_arm)
+
+    snap = controller.snapshot()
+    total_observations = sum(b["observations"] for b in snap.values())
+    assert total_observations == len(outcome.segments)
+
+
+def test_adaptive_routes_a_bucket_once_escalated():
+    """Pre-escalate the file_read bucket by hand (as if a prior segment of
+    this kind had already earned it), then confirm a NEW file_read segment in
+    this call is sent kind+intent, unlike a fresh/unescalated bucket."""
+    import dataclasses
+    from segpilot.policy.adaptive import AdaptiveController
+
+    controller = AdaptiveController()
+    for _ in range(5):
+        controller.record_compression("file_read")   # escalates: 0/5 regret
+    assert controller.should_route("file_read") is True
+    assert controller.should_route("log_output") is False   # untouched bucket
+
+    adaptive_arm = dataclasses.replace(ARMS["adaptive"], controller=controller)
+    fake = FakeStrategy()
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=fake)
+    outcome = comp.process(_session(), adaptive_arm)
+
+    by_kind = {s.tool_name: c for s, c in zip(outcome.segments, fake.calls)}
+    # log_output segment (run_tests) stays conservative; file_read (read_file)
+    # is routed, since its bucket was pre-escalated above.
+    kinds_sent = [c["kind"] for c in fake.calls]
+    assert None in kinds_sent            # the conservative (log_output) segment
+    assert "file_read" in kinds_sent     # the routed (file_read) segment
+
+
+def test_adaptive_segment_outcome_keeps_real_kind_for_telemetry():
+    """Even when the controller withholds kind from Paritok, SegmentOutcome
+    must still record the REAL classified kind -- otherwise regret couldn't
+    be attributed back to the right bucket later, and reporting would lie
+    about what kind of content this was."""
+    import dataclasses
+    from segpilot.policy.adaptive import AdaptiveController
+
+    controller = AdaptiveController()   # fresh: everything conservative
+    adaptive_arm = dataclasses.replace(ARMS["adaptive"], controller=controller)
+    comp = SegpilotCompressor(_cfg(), cache=None, strategy=FakeStrategy())
+
+    outcome = comp.process(_session(), adaptive_arm)
+
+    # The log_output/file_read segments were correctly identified even though
+    # nothing was actually routed to Paritok this way.
+    real_kinds = {s.kind for s in outcome.segments}
+    assert real_kinds == {"log_output", "file_read"}
+
+
+def test_non_adaptive_arms_are_unaffected_by_controller_field_existing():
+    """Adding `controller` to Arm must not change any existing arm's
+    behaviour -- they all default to controller=None."""
+    outcome, fake = _run("segpilot")
+    assert [s.kind for s in outcome.segments] == ["log_output", "file_read"]

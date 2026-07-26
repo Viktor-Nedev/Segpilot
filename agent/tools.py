@@ -221,6 +221,52 @@ for _schema in TOOL_SCHEMAS:
     _params["required"] = ["thought", *_params.get("required", [])]
 
 
+# `expand_context` -- the virtual tool that recovers a compressed segment's
+# original content, used only by the "adaptive" arm (agent/ruff.py). It is kept
+# separate from TOOL_SCHEMAS/execute() deliberately: it is not a sandboxed
+# filesystem action, it is resolved from our own client-side shadow store
+# (segpilot/policy/shadow.py) before the call would ever reach the sandbox --
+# mirroring how Paritok's own middleware treats virtual tools as distinct from
+# real ones (paritok/pipelines/virtual.py). Wording is kept close to their
+# EXPAND_CONTEXT_SCHEMA for realism, adapted to OpenAI tool-call format.
+#
+# Deliberately excluded from every OTHER arm's tool surface: stock and segpilot
+# sessions (including the ones already recorded for the N=8 offline comparison)
+# were run without this tool, so adding it there now would change what the
+# agent can do mid-session and confound that comparison. "adaptive" is a
+# separate experiment on its own terms, not a variant to diff against them.
+EXPAND_CONTEXT_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "expand_context",
+        "description": (
+            "Retrieve the full original content for a compressed reference tag "
+            "of the form [REF:id] or [REF:id src=path]. If the short summary "
+            "next to the tag already answers what you need, do NOT call this -- "
+            "just use the summary. Call it only when you need the exact, full "
+            "original: e.g. to read the code closely or to edit it. Prefer this "
+            "over re-reading the file with read_file when you need the full "
+            "text of content you have already seen in this conversation."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "shadow_id": {
+                    "type": "string",
+                    "description": (
+                        "The hex reference id -- the token immediately after "
+                        "'REF:' and before any space or ']'. Do not include the "
+                        "'src=...' portion. Example: for [REF:abc123 src=foo.py], "
+                        "pass 'abc123'."
+                    ),
+                }
+            },
+            "required": ["shadow_id"],
+        },
+    },
+}
+
+
 def execute(workdir: Path, name: str, args: dict) -> tuple[str, bool]:
     """Run a tool. Returns (output, ok). Errors come back as text, not raises,
     so a bad call costs the model a turn instead of killing the run."""

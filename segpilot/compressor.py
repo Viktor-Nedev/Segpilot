@@ -27,7 +27,9 @@ from segpilot.config import SegpilotConfig
 from segpilot.policy.cache import CompressionCache
 from segpilot.policy.guard import score_retention
 from segpilot.policy.intent import Intent, build_intent, stock_intent
+from segpilot.policy.adaptive import AdaptiveController
 from segpilot.policy.kind import build_tool_call_index, label_segment, stock_kind
+from segpilot.policy.shadow import ShadowStore
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,12 @@ class Arm:
     use_intent: bool
     use_guard: bool = False
     compress: bool = True   # False = passthrough; used to record neutral references
+    # Set only for the "adaptive" arm, and only per live run (see agent/ruff.py) --
+    # never on the shared ARMS template below, since AdaptiveController is
+    # stateful and learns within a single session. When present, it overrides
+    # use_kind/use_intent PER SEGMENT: use_kind/use_intent above become the
+    # ceiling (what the controller may escalate to), not a fixed setting.
+    controller: AdaptiveController | None = None
 
 
 ARMS: dict[str, Arm] = {
@@ -57,6 +65,11 @@ ARMS: dict[str, Arm] = {
     "intent_only":  Arm("intent_only",  use_kind=False, use_intent=True),
     "segpilot":     Arm("segpilot",     use_kind=True,  use_intent=True),
     "segpilot+guard": Arm("segpilot+guard", use_kind=True, use_intent=True, use_guard=True),
+    # Template only -- always used via dataclasses.replace(ARMS["adaptive"],
+    # controller=AdaptiveController()) at the start of a live run. Regret
+    # depends on the live model's actual behaviour, so this arm cannot be
+    # offline-replayed and is deliberately excluded from COMPRESSING_ARMS.
+    "adaptive":     Arm("adaptive",     use_kind=True,  use_intent=True, controller=None),
 }
 
 # The arms that actually compress — the set the replay harness sweeps and the
@@ -136,11 +149,17 @@ class SegpilotCompressor:
         *,
         cache: CompressionCache | None = None,
         strategy=None,
+        shadow: ShadowStore | None = None,
     ):
         self.config = config
         self.cache = cache
         # Injectable so tests can run without touching the network.
         self.strategy = strategy or GpuServerStrategy(config.to_paritok_config().gpu_server)
+        # Populated by compress_segment when set. Lets the "adaptive" live arm's
+        # expand_context tool resolve a [REF:id] back to its original -- see
+        # segpilot/policy/shadow.py for why we need our own store rather than
+        # Paritok's (server-side, tied to CompressionPipeline, which we bypass).
+        self.shadow = shadow
 
     # ---- policy decisions ------------------------------------------------
 
@@ -176,9 +195,19 @@ class SegpilotCompressor:
         """Compress one segment. Returns (compressed, cache_hit)."""
         if self.cache is not None:
             if hit := self.cache.get(content, kind, intent):
+                # Re-record into the shadow store even on a cache hit: the
+                # store is per-session and in-memory (see shadow.py), so a
+                # compression served from the (cross-session, disk) cache
+                # would otherwise leave THIS session unable to resolve its
+                # [REF:id] via expand_context.
+                if self.shadow is not None:
+                    self.shadow.record(hit.compressed, content, kind=kind)
                 return hit.compressed, True
 
         compressed = self.strategy.compress(content, query=intent, kind=kind)
+
+        if self.shadow is not None:
+            self.shadow.record(compressed, content, kind=kind)
 
         # Do NOT cache a passthrough. GpuServerStrategy returns the content
         # unchanged when the hosted GPU is unreachable (e.g. a RunPod cold
@@ -249,10 +278,22 @@ class SegpilotCompressor:
                 ))
                 continue
 
+            # Adaptive: `kind` above is the real classification (kept for
+            # telemetry/bucketing regardless of what happens next). The
+            # controller decides, per segment and per bucket, whether THIS
+            # compression actually gets kind+intent (routed, segpilot-style)
+            # or neither (conservative, stock-style) -- a single either/or
+            # choice, not four independent combinations.
+            send_kind, send_intent = kind, intent
+            if arm.controller is not None:
+                if not arm.controller.should_route(kind):
+                    send_kind, send_intent = None, Intent(text="", source="adaptive_conservative")
+                arm.controller.record_compression(kind)
+
             compressed, cache_hit = self.compress_segment(
-                content, kind=kind, intent=intent.text
+                content, kind=send_kind, intent=send_intent.text
             )
-            report = score_retention(content, compressed, kind=kind or "file_read")
+            report = score_retention(content, compressed, kind=send_kind or "file_read")
             guard_tripped = False
 
             # Guard: if too much must-keep content was destroyed, keep the
@@ -261,11 +302,11 @@ class SegpilotCompressor:
             if arm.use_guard and report.retention < self.config.policy.min_retention:
                 guard_tripped = True
                 compressed = content
-                report = score_retention(content, content, kind=kind or "file_read")
+                report = score_retention(content, content, kind=send_kind or "file_read")
 
             outcome.segments.append(SegmentOutcome(
-                index=i, kind=kind, intent=intent.text,
-                intent_source=intent.source,
+                index=i, kind=kind, intent=send_intent.text,
+                intent_source=send_intent.source,
                 original_tokens=original_tokens,
                 compressed_tokens=count_tokens(compressed),
                 retention=report.retention,
