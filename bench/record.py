@@ -80,19 +80,33 @@ def _session_health(path: Path) -> tuple[int, str]:
 
 
 def record_one(task_id: str, arm: str, sessions_dir: str, *, force: bool,
-               max_turns: int) -> str:
+               max_turns: int, live: bool = False) -> str:
     """Returns 'skipped' | 'solved' | 'unsolved' | 'ratelimited' | 'empty'.
 
-    A session that the rate limiter killed (upstream error, no tool results) is
-    deleted rather than kept, so a resumed run re-records it instead of skipping
-    an empty file. Only a session with real content counts as done.
+    A session that the rate limiter killed is deleted rather than kept, so a
+    resumed run re-records it instead of skipping a broken file. What counts
+    as "killed" differs by purpose:
+
+      reference (raw) sessions are only useful for their accumulated content,
+      not for a task outcome, so a partial-but-rich transcript (real turns, real
+      tool results) is still valid even if the run was later cut off -- only a
+      genuinely empty one (0 tool results) gets discarded.
+
+      live sessions (`live=True`) exist to measure solve rate, so ANY run that
+      ended in upstream_error is invalid regardless of how much partial content
+      it accumulated: "unsolved" only means something if the agent actually got
+      to finish. We saw this concretely recording campaign_1's live A/B --
+      `stock` reached 5 real turns before a 429, and without this check it would
+      have been recorded as a legitimate "unsolved," when really it just ran out
+      of quota mid-task.
     """
     path = _session_path(sessions_dir, task_id, arm)
     if path.exists() and not force:
-        tool_results, _ = _session_health(path)
-        if tool_results > 0:
+        tool_results, stop_reason = _session_health(path)
+        was_interrupted = "upstream_error" in stop_reason
+        if tool_results > 0 and not (live and was_interrupted):
             return "skipped"          # genuinely done
-        path.unlink(missing_ok=True)  # empty leftover -> re-record
+        path.unlink(missing_ok=True)  # empty or invalidated leftover -> re-record
 
     try:
         rc = run_agent([
@@ -105,9 +119,11 @@ def record_one(task_id: str, arm: str, sessions_dir: str, *, force: bool,
         return "empty"
 
     tool_results, stop_reason = _session_health(path)
-    if "upstream_error" in stop_reason and tool_results == 0:
-        # Quota/rate wall: the run never really started. Drop the empty file so
-        # it re-records on the next run, and let the caller stop the batch.
+    was_interrupted = "upstream_error" in stop_reason
+    if was_interrupted and (tool_results == 0 or live):
+        # Quota/rate wall: the run never really started (reference), or started
+        # but never reached a real outcome (live). Drop the file so it
+        # re-records on the next run, and let the caller stop the batch.
         path.unlink(missing_ok=True)
         return "ratelimited"
     if tool_results == 0:
@@ -154,7 +170,8 @@ def main(argv: list[str] | None = None) -> int:
     for i, (task_id, arm) in enumerate(plan, 1):
         print(f"\n[{i}/{len(plan)}] {task_id} / {arm}")
         status = record_one(task_id, arm, args.sessions_dir,
-                            force=args.force, max_turns=args.max_turns)
+                            force=args.force, max_turns=args.max_turns,
+                            live=(arm != "raw"))
         counts[status] += 1
         print(f"    -> {status}")
         if status == "ratelimited":
