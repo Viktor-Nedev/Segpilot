@@ -1,18 +1,18 @@
 # SEGPILOT replay report
 
-Offline replay of **11 recorded session(s)** under 5 compression arms. Compression ran on Paritok's hosted GPU; every arm was applied to identical, uncompressed reference content.
+Offline replay of **12 recorded session(s)** under 5 compression arms. Compression ran on Paritok's hosted GPU; every arm was applied to identical, uncompressed reference content.
 
-> **Verdict (see [results.md](../../docs/results.md)):** intent/kind routing does not reliably beat stock. `kind_only` equals `stock` everywhere; the only mover is must-keep retention under intent, and it is small (+~9pp mean) and inconsistent (it reverses on one of three drift sessions). `task ret.` is essentially constant across arms, so `rel/1k` is flat and reflects only how hard each arm compressed. Read must-keep retention as the discriminating axis, not rel/1k.
+> **Verdict (see [results.md](../../docs/results.md)):** intent/kind routing does not reliably beat stock, at the full pre-registered N=8 campaigns. `kind_only` equals `stock` exactly on every metric. Intent routing's must-keep effect *shrank as N grew* (+9.0pp at N=3 -> +3.8pp at N=8, 5/8 campaigns positive, 3/8 negative), and task-relevant retention -- the metric that matters most -- is slightly *worse* under routing than stock. Read must-keep retention as the discriminating axis, not `rel/1k`, which stays roughly flat.
 
-## Aggregate — campaign (7 session(s))
+## Aggregate — campaign (8 session(s))
 
 | arm | ratio | saved | must-keep ret. | task ret. | rel/1k | Δ vs stock | guard trips |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| `stock` | 0.504 | 50% | 86% | 98% | 0.04 |  | 0 |
-| `kind_only` | 0.494 | 51% | 86% | 98% | 0.04 | 1.02× | 0 |
-| `intent_only` | 0.494 | 51% | 94% | 98% | 0.04 | 1.02× | 0 |
-| `segpilot` | 0.483 | 52% | 94% | 98% | 0.04 | 1.04× | 0 |
-| `segpilot+guard` | 0.592 | 41% | 97% | 98% | 0.03 | 0.85× | 5 |
+| `stock` | 0.504 | 50% | 86% | 99% | 0.03 |  | 0 |
+| `kind_only` | 0.488 | 51% | 86% | 99% | 0.03 | 1.03× | 0 |
+| `intent_only` | 0.473 | 53% | 91% | 97% | 0.03 | 1.05× | 0 |
+| `segpilot` | 0.464 | 54% | 91% | 97% | 0.03 | 1.07× | 0 |
+| `segpilot+guard` | 0.630 | 37% | 97% | 99% | 0.03 | 0.80× | 9 |
 
 ## Aggregate — single-bug (4 session(s))
 
@@ -28,11 +28,11 @@ Offline replay of **11 recorded session(s)** under 5 compression arms. Compressi
 
 | arm | ratio | saved | must-keep ret. | task ret. | rel/1k | Δ vs stock | guard trips |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| `stock` | 0.511 | 49% | 87% | 96% | 0.03 |  | 0 |
-| `kind_only` | 0.504 | 50% | 87% | 96% | 0.03 | 1.01× | 0 |
-| `intent_only` | 0.502 | 50% | 94% | 96% | 0.03 | 1.02× | 0 |
-| `segpilot` | 0.489 | 51% | 93% | 96% | 0.03 | 1.05× | 0 |
-| `segpilot+guard` | 0.615 | 39% | 97% | 98% | 0.03 | 0.84× | 7 |
+| `stock` | 0.509 | 49% | 87% | 97% | 0.03 |  | 0 |
+| `kind_only` | 0.497 | 50% | 87% | 97% | 0.03 | 1.02× | 0 |
+| `intent_only` | 0.482 | 52% | 91% | 96% | 0.03 | 1.04× | 0 |
+| `segpilot` | 0.471 | 53% | 91% | 96% | 0.03 | 1.07× | 0 |
+| `segpilot+guard` | 0.644 | 36% | 97% | 98% | 0.02 | 0.80× | 11 |
 
 > **must-keep ret.** = fraction of Paritok's own must-keep spans (paths, identifiers, error classes) surviving compression — the axis on which the arms actually differ. **rel/1k** = task-relevant tokens retained per 1000 spent; it is flat here because task retention is constant across arms, so it measures only compression aggressiveness. Campaign sessions are the drift test; single-bug sessions are the no-drift control.
 
@@ -95,5 +95,10 @@ Offline replay of **11 recorded session(s)** under 5 compression arms. Compressi
 | campaign_7 | `intent_only` | 0.545 | 100% | 0.35 |
 | campaign_7 | `segpilot` | 0.545 | 100% | 0.35 |
 | campaign_7 | `segpilot+guard` | 0.545 | 100% | 0.35 |
+| campaign_8 | `stock` | 0.500 | 100% | 0.17 |
+| campaign_8 | `kind_only` | 0.462 | 100% | 0.19 |
+| campaign_8 | `intent_only` | 0.382 | 91% | 0.21 |
+| campaign_8 | `segpilot` | 0.379 | 91% | 0.21 |
+| campaign_8 | `segpilot+guard` | 0.793 | 100% | 0.11 |
 
 ![Pareto](pareto.svg)

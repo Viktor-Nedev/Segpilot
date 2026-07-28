@@ -27,14 +27,19 @@ then. We built that — a kind engine, a phase-aware intent engine, a retention
 guard — and then did the thing most "we optimized X" projects skip: **we measured
 whether it actually helps, honestly, and reported that it mostly doesn't.**
 
-On 3 drifted multi-bug sessions and 4 single-bug controls, replayed under five
-arms: **`kind` routing changes nothing, and `intent` routing gives a small
-(~9pp must-keep retention) and inconsistent improvement that reverses on one of
-three sessions.** No reliable win. The lasting output is **nine measured findings
-about Paritok's hosted API**, a **reproducible probe** anyone can point at their
-own workload, and an honest **null result** that saves the next person from a
-dead-end optimization. Full numbers: [docs/results.md](docs/results.md) ·
-[examples/reports/replay_report.md](examples/reports/replay_report.md).
+On the full **pre-registered set of 8 drifted multi-bug campaigns** (plus 4
+single-bug controls), replayed under five arms: **`kind` routing changes
+nothing — confirmed exactly across all 8 — and `intent` routing's effect
+shrank every time we added data** (+9.0pp must-keep retention at N=3 → +3.8pp
+at the full N=8), while task-relevant retention ends up **slightly worse**
+under routing than under stock. No reliable win — if anything, a small net
+negative on the metric that matters most. The lasting output is **nine
+measured findings about Paritok's hosted API**, a **reproducible probe**
+anyone can point at their own workload, and an honest **null result**,
+reached by not stopping at the first (or second) encouraging number. Full
+numbers: [docs/results.md](docs/results.md) ·
+[examples/reports/replay_report.md](examples/reports/replay_report.md) ·
+[live dashboard](https://segpilot.onrender.com/).
 
 ## What we measured first
 
@@ -57,42 +62,52 @@ hosted path — while the self-hosted path honours it — is finding #1.
 ## The honest result
 
 Five arms isolate each layer's contribution, replayed offline over identical,
-uncompressed reference trajectories:
+uncompressed reference trajectories — at the full pre-registered N=8:
 
-| arm | kind | intent | must-keep ret. (campaigns) |
-|---|---|---|---|
-| `stock` | none | global (`_extract_query`) | 81% |
-| `kind_only` | tool-identity | global | 81% |
-| `intent_only` | none | per-segment | 93% |
-| `segpilot` | tool-identity | per-segment | 93% |
-| `segpilot+guard` | tool-identity | per-segment + guard | 97% |
+| arm | kind | intent | must-keep ret. (campaigns) | task ret. |
+|---|---|---|---|---|
+| `stock` | none | global (`_extract_query`) | 86% | **99%** |
+| `kind_only` | tool-identity | global | 86% | 99% |
+| `intent_only` | none | per-segment | 91% | **97%** |
+| `segpilot` | tool-identity | per-segment | 91% | **97%** |
+| `segpilot+guard` | tool-identity | per-segment + guard | 97% | 99% |
 
-- **`kind` routing does nothing.** `kind_only` equals `stock` on every metric in
-  every session. Correct kind labelling (finding #9) doesn't change the output on
-  these workloads.
-- **`intent` routing is weak and inconsistent.** +9pp must-keep retention on
-  average across the three drift sessions — but it *reverses* on one of them, and
-  the mean is carried by one outlier. Compression ratio is likewise mixed.
-- **Task-relevant retention doesn't move**, so the token-efficiency headline is
-  flat. The only axis the arms differ on is must-keep retention, and weakly.
+- **`kind` routing does nothing — and this is now solid.** `kind_only` equals
+  `stock` *exactly* on every metric, and has at every N we measured (3, 5, 7,
+  8). Correct kind labelling (finding #9) doesn't change the output on these
+  workloads at all.
+- **`intent` routing's effect shrank as N grew.** +9.0pp must-keep retention
+  at N=3 → +6.8pp at N=5 → +5.3pp at N=7 → **+3.8pp at the full N=8** — the
+  signature of an early result dominated by noise, not a real effect. 5 of 8
+  campaigns positive, 3 of 8 negative.
+- **Task-relevant retention is not neutral — it's slightly worse under
+  routing.** 97% vs 99% for stock, in both the campaign and single-bug
+  populations. This is the sharpest finding the full dataset shows that the
+  smaller samples did not: routing isn't just "no clear win," it's a small net
+  negative on the metric that most directly represents whether the agent kept
+  the code it needed.
 
-**Verdict: we cannot claim intent/kind routing reliably beats Paritok's stock
-defaults, even on the long drifted sessions the idea is meant for.** That is a
-useful thing to know, measured rather than assumed.
+**Verdict: intent/kind routing does not reliably beat Paritok's stock
+defaults.** Building a compression-routing layer on this evidence would not be
+justified. That is a useful thing to know, measured rather than assumed.
 
 ## What we got wrong (kept, not hidden)
 
-Twice we reported an encouraging number and had to retract it:
+Three times we reported an encouraging number and had to revise it:
 
 - **"79% fewer tokens / 3.1× on a drift session."** A hand-constructed example,
   not a benchmark result — the real agent sessions didn't reproduce it.
 - **"1.61× rel/1k on the drift session."** An artefact of a cache poisoned during
   a hosted-GPU outage: passthrough segments were cached as if compressed. Fixed
   (never cache a passthrough) and re-run to a clean pass.
+- **"+9pp must-keep retention at N=3 — a modest but real win."** Not fabricated,
+  just didn't hold: the estimate shrank every time we added campaigns, down to
+  +3.8pp at the full pre-registered N=8, while task-relevant retention turned
+  out slightly negative once all 8 were in.
 
-Both are written up in [docs/results.md](docs/results.md). Keeping them is the
-point: the whole project is an argument for measuring instead of trusting the
-first number.
+All three are written up in [docs/results.md](docs/results.md). Keeping them is
+the point: the whole project is an argument for measuring instead of trusting
+the first number — or the second one.
 
 ## The nine findings (the real contribution)
 
@@ -119,7 +134,7 @@ segpilot/
   replay/             offline sweep + metrics + report (Markdown & SVG Pareto)
   viewtrace.py        the missing Paritok trace viewer (finding #7)
 agent/                Ruff — a small real coding agent, compressed live
-bench/                8 seeded bugs + 3 drift campaigns, all self-verifying
+bench/                8 seeded bugs + 8 drift campaigns, all self-verifying
 ```
 
 Compression always runs on Paritok's hosted GPU, attributed to the account key.

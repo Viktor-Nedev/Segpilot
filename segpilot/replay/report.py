@@ -65,12 +65,13 @@ def markdown_report(
     )
     lines.append(
         "> **Verdict (see [results.md](../../docs/results.md)):** intent/kind "
-        "routing does not reliably beat stock. `kind_only` equals `stock` "
-        "everywhere; the only mover is must-keep retention under intent, and it is "
-        "small (+~9pp mean) and inconsistent (it reverses on one of three drift "
-        "sessions). `task ret.` is essentially constant across arms, so `rel/1k` is "
-        "flat and reflects only how hard each arm compressed. Read must-keep "
-        "retention as the discriminating axis, not rel/1k.\n"
+        "routing does not reliably beat stock, at the full pre-registered N=8 "
+        "campaigns. `kind_only` equals `stock` exactly on every metric. Intent "
+        "routing's must-keep effect *shrank as N grew* (+9.0pp at N=3 -> +3.8pp "
+        "at N=8, 5/8 campaigns positive, 3/8 negative), and task-relevant "
+        "retention -- the metric that matters most -- is slightly *worse* under "
+        "routing than stock. Read must-keep retention as the discriminating "
+        "axis, not `rel/1k`, which stays roughly flat.\n"
     )
 
     # Split by population. The thesis is about drift, which only campaigns

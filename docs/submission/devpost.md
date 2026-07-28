@@ -40,19 +40,26 @@ work, or not, on your own text.
 
 ### What we found
 
-We ran the real agent on 7 sessions (3 drifted multi-bug "campaigns" up to 56K
-tokens of accumulated context, 4 single-bug controls) and replayed all five arms
-over identical trajectories. The honest result:
+We ran the real agent on the full **pre-registered set of 8 drifted multi-bug
+"campaigns"** (2 to 4 unrelated bugs chained per session, up to 96K tokens of
+accumulated context) plus 4 single-bug controls, and replayed all five arms
+over identical trajectories. All 8 campaigns were designed and committed
+*before* recording or replaying any of them, so nothing here is selected on
+outcome. The honest result:
 
-- **`kind` routing changes nothing** — `kind_only` equals stock on every metric.
-- **`intent` routing is weak and inconsistent** — +9pp must-keep retention on
-  average across the three drift sessions, but it reverses on one of them, and
-  task-relevant retention doesn't move.
+- **`kind` routing changes nothing** — `kind_only` equals stock *exactly* on
+  every metric, confirmed across all 8 campaigns.
+- **`intent` routing's effect shrank as we added data** — +9.0pp must-keep
+  retention at N=3 campaigns, down to +3.8pp at the full N=8 (5 of 8 positive,
+  3 of 8 negative). That shrinkage is itself the finding: a real effect
+  stabilises as N grows; this one didn't.
+- **Task-relevant retention ends up slightly *worse* under routing** — 97% vs
+  99% for stock, in both populations. Not neutral, negative.
 
-**We cannot claim intent/kind routing reliably beats Paritok's stock defaults,
-even under the drift the idea is meant for.** That's a genuinely useful thing to
-know — measured, not assumed — and it saves the next person a dead-end
-optimization.
+**We cannot claim intent/kind routing reliably beats Paritok's stock defaults —
+if anything, on the metric that matters most, it's a small net negative.**
+That's a genuinely useful thing to know — measured, not assumed at N=3 and
+then left alone — and it saves the next person a dead-end optimization.
 
 ### The real contribution: nine measured findings
 

@@ -42,7 +42,7 @@ def test_json_report_includes_findings_and_corrections():
     doc = build_json_report(totals, replays, arms)
 
     assert len(doc["findings"]) == 9
-    assert len(doc["corrections"]) == 2
+    assert len(doc["corrections"]) == 3
     assert all("was" in c and "why" in c for c in doc["corrections"])
     assert "verdict" in doc and "not reliably" in doc["verdict"]
 

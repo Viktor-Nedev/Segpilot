@@ -40,6 +40,10 @@ CORRECTIONS = [
         "was": "1.61× rel/1k on the drift session",
         "why": "An artefact of a cache poisoned during a hosted-GPU outage: passthrough segments were cached as if compressed. Fixed and re-run to a clean pass.",
     },
+    {
+        "was": "+9pp must-keep retention at N=3 — \"a modest but real win\"",
+        "why": "Not fabricated or buggy, just didn't hold: +9.0pp → +6.8pp → +5.3pp → +3.8pp as campaigns grew from 3 to the full pre-registered 8, while task-relevant retention turned out slightly negative once all 8 were in.",
+    },
 ]
 
 
@@ -99,10 +103,13 @@ def build_json_report(
         "corrections": CORRECTIONS,
         "verdict": (
             "Intent/kind routing does not reliably beat Paritok's stock defaults. "
-            "kind_only equals stock everywhere; intent routing is weak "
-            "(~+9pp must-keep on drift sessions) and inconsistent (reverses on "
-            "some sessions). Task-relevant retention barely moves, so rel/1k is "
-            "flat and reflects mostly how hard each arm compressed."
+            "At the full pre-registered N=8 campaigns, kind_only equals stock "
+            "exactly on every metric. Intent routing's must-keep effect shrank as "
+            "N grew (+9.0pp at N=3 -> +3.8pp at N=8, 5 of 8 campaigns positive, "
+            "3 negative) and task-relevant retention -- the metric that matters "
+            "most -- is slightly WORSE under routing (97% vs 99% for stock in the "
+            "campaign population). Building on this evidence would not be "
+            "justified."
         ),
     }
     if solve_rate:
