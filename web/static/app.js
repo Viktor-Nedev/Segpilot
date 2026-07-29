@@ -77,6 +77,8 @@ function renderStatStrip(doc) {
 function renderVerdict(doc) {
   document.getElementById("verdictHeadline").textContent =
     doc.verdict || "No verdict recorded yet.";
+  const noteEl = document.getElementById("liveStatusNote");
+  if (noteEl) noteEl.textContent = doc.live_status_note || "";
 }
 
 function armsTableBody(arms, rows) {

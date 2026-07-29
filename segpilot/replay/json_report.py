@@ -31,6 +31,19 @@ FINDINGS = [
     "The two kind classifiers disagree; the conversation-aware one mislabels every file read",
 ]
 
+# Stated once, here, rather than left implicit: the dashboard should not let a
+# visitor assume the N=8 result was live-confirmed just because it isn't
+# mentioned. See docs/results.md "Live confirmation: attempted, not completed"
+# for the full account.
+LIVE_STATUS_NOTE = (
+    "The result above is offline-only. Live solve-rate A/B was attempted -- "
+    "four separate recording attempts across two days -- and stopped: "
+    "Gemini's free-tier quota killed every one before completion. The "
+    "adaptive regret-loop controller is built and unit-tested but was never "
+    "run live for the same reason. Both are labelled \"built, not proven\" "
+    "in docs/results.md, not claimed as validated."
+)
+
 CORRECTIONS = [
     {
         "was": "79% fewer tokens / 3.1× on a drift session",
@@ -101,6 +114,7 @@ def build_json_report(
         "per_task": per_task,
         "findings": FINDINGS,
         "corrections": CORRECTIONS,
+        "live_status_note": LIVE_STATUS_NOTE,
         "verdict": (
             "Intent/kind routing does not reliably beat Paritok's stock defaults. "
             "At the full pre-registered N=8 campaigns, kind_only equals stock "

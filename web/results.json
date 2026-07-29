@@ -1020,5 +1020,6 @@
       "why": "Not fabricated or buggy, just didn't hold: +9.0pp → +6.8pp → +5.3pp → +3.8pp as campaigns grew from 3 to the full pre-registered 8, while task-relevant retention turned out slightly negative once all 8 were in."
     }
   ],
+  "live_status_note": "The result above is offline-only. Live solve-rate A/B was attempted -- four separate recording attempts across two days -- and stopped: Gemini's free-tier quota killed every one before completion. The adaptive regret-loop controller is built and unit-tested but was never run live for the same reason. Both are labelled \"built, not proven\" in docs/results.md, not claimed as validated.",
   "verdict": "Intent/kind routing does not reliably beat Paritok's stock defaults. At the full pre-registered N=8 campaigns, kind_only equals stock exactly on every metric. Intent routing's must-keep effect shrank as N grew (+9.0pp at N=3 -> +3.8pp at N=8, 5 of 8 campaigns positive, 3 negative) and task-relevant retention -- the metric that matters most -- is slightly WORSE under routing (97% vs 99% for stock in the campaign population). Building on this evidence would not be justified."
 }
