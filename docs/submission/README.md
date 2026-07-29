@@ -7,7 +7,7 @@ not part of the running project.
 - **[video_script.md](video_script.md)** — scene-by-scene script for the <3 min demo.
 - **[issues.md](issues.md)** — the nine findings as ready-to-file GitHub issues.
 - **[social_post.md](social_post.md)** — `#BuiltWithParitok` post drafts.
-- **[results_page.html](results_page.html)** — source of the published Project URL.
+- **[results_page.html](results_page.html)** — source of the fallback Artifact mirror.
 
 ## Your checklist (the parts only you can do)
 
@@ -18,8 +18,9 @@ not part of the running project.
       fallback to the Devpost feedback form / HF discussions / Discord).
 - [ ] **Post** one `#BuiltWithParitok` update (optional, Social Blitz $50).
 - [ ] **Submit on Devpost** with:
-  - Project URL: https://claude.ai/code/artifact/c4b25561-75f6-4434-8466-5fe9f92a158f
-  - Repo URL: https://github.com/Viktor-Nedev/Paritok_Hackathon
+  - Project URL: https://segpilot.onrender.com/ (fallback if Render is asleep
+    during judging: https://claude.ai/code/artifact/c4b25561-75f6-4434-8466-5fe9f92a158f)
+  - Repo URL: https://github.com/Viktor-Nedev/Segpilot
   - Paritok account email: **confirm it is the one your API key is under**
   - Text description (from `devpost.md`)
   - Video link
@@ -28,7 +29,14 @@ not part of the running project.
 
 ## Already done (in the repo)
 
+- Live site (`https://segpilot.onrender.com/`): dashboard driven by
+  `web/results.json`, plus a real Paritok hosted-GPU compression demo
 - Apache 2.0 `LICENSE`, Paritok credit + badge in `README.md`
+- Full N=8 pre-registered campaign result, offline replay, five arms
 - Honest results: `docs/results.md`; findings: `docs/findings.md`
+- Live solve-rate A/B: attempted four times, stopped on Gemini free-tier
+  quota — documented as not completed, not claimed as validated
+- Adaptive regret-loop controller: built and unit-tested, never run live —
+  same "built, not proven" labelling
 - Reproducible evidence: `examples/reports/`, `examples/traces/`, `examples/probe_output.txt`
-- 39 passing tests; every number reproduces from committed reference sessions
+- 104 passing tests; every number reproduces from committed reference sessions

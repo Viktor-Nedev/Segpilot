@@ -5,7 +5,7 @@ compression demo running on Paritok's hosted GPU.
 **Fallback URL** (in case Render's free tier is asleep or down during judging):
 https://claude.ai/code/artifact/c4b25561-75f6-4434-8466-5fe9f92a158f — a static
 mirror of the same findings/results, always available.
-**Repository:** https://github.com/Viktor-Nedev/Paritok_Hackathon
+**Repository:** https://github.com/Viktor-Nedev/Segpilot
 **Paritok account email:** viktornedev08@gmail.com
 
 > Note: the live site is a Render free-tier instance. It sleeps after ~15 min
@@ -100,7 +100,7 @@ instead of trusting the first number.
 Python. Paritok hosted GPU for compression; Gemini 2.5 Flash (OpenAI-compatible
 endpoint) as the agent's upstream LLM. A small real coding agent, an 8-bug +
 3-campaign self-verifying benchmark, an offline replay harness with a
-Markdown+SVG report, 39 tests. One command reproduces every number; the reference
+Markdown+SVG report, 104 tests. One command reproduces every number; the reference
 sessions are committed so no re-recording is needed.
 
 Built with Paritok — https://github.com/Paritok-official/paritok-4b-v1
