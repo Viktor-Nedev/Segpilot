@@ -183,9 +183,9 @@
     </p>
     <div class="stats">
       <div class="stat"><div class="n">9</div><div class="l">measured findings</div></div>
-      <div class="stat"><div class="n">7</div><div class="l">replayed sessions</div></div>
+      <div class="stat"><div class="n">12</div><div class="l">replayed sessions</div></div>
       <div class="stat"><div class="n">5</div><div class="l">compression arms</div></div>
-      <div class="stat"><div class="n">2</div><div class="l">numbers retracted</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">numbers retracted</div></div>
     </div>
   </div>
 </header>
@@ -229,39 +229,46 @@
     <p>
       SEGPILOT routes <code>query</code> and <code>kind</code> per segment, so each tool result is
       compressed for what the agent is doing right then. Five arms isolate each layer, replayed over
-      identical uncompressed trajectories — 3 drifted multi-bug campaigns and 4 single-bug controls.
+      identical uncompressed trajectories — the full pre-registered set of <strong>8 drifted
+      multi-bug campaigns</strong> plus 4 single-bug controls, all designed and committed before
+      recording or replaying a single one.
     </p>
   </div>
   <div class="wrap col">
     <div class="verdict-card">
-      <div class="headline">Intent/kind routing does <span class="no">not</span> reliably beat stock&nbsp;— even under drift.</div>
+      <div class="headline">Intent/kind routing does <span class="no">not</span> reliably beat stock.</div>
       <div class="tablewrap">
       <table class="data">
-        <thead><tr><th>arm</th><th>must-keep retention (campaigns)</th><th></th></tr></thead>
+        <thead><tr><th>arm</th><th>must-keep ret.</th><th></th><th>task ret.</th></tr></thead>
         <tbody>
-          <tr><td>stock</td><td>81%</td><td><span class="meter"><span class="bar"><i style="width:81%"></i></span></span></td></tr>
-          <tr><td>kind_only</td><td>81%</td><td><span class="meter"><span class="bar"><i style="width:81%"></i></span></span></td></tr>
-          <tr class="me"><td>intent_only</td><td>93%</td><td><span class="meter"><span class="bar"><i style="width:93%"></i></span></span></td></tr>
-          <tr class="me"><td>segpilot</td><td>93%</td><td><span class="meter"><span class="bar"><i style="width:93%"></i></span></span></td></tr>
-          <tr><td>segpilot+guard</td><td>97%</td><td><span class="meter"><span class="bar"><i style="width:97%"></i></span></span></td></tr>
+          <tr><td>stock</td><td>86%</td><td><span class="meter"><span class="bar"><i style="width:86%"></i></span></span></td><td>99%</td></tr>
+          <tr><td>kind_only</td><td>86%</td><td><span class="meter"><span class="bar"><i style="width:86%"></i></span></span></td><td>99%</td></tr>
+          <tr class="me"><td>intent_only</td><td>91%</td><td><span class="meter"><span class="bar"><i style="width:91%"></i></span></span></td><td>97%</td></tr>
+          <tr class="me"><td>segpilot</td><td>91%</td><td><span class="meter"><span class="bar"><i style="width:91%"></i></span></span></td><td>97%</td></tr>
+          <tr><td>segpilot+guard</td><td>97%</td><td><span class="meter"><span class="bar"><i style="width:97%"></i></span></span></td><td>99%</td></tr>
         </tbody>
       </table>
       </div>
       <p class="note" style="font-style:normal;color:var(--muted)">
-        <strong style="color:var(--ink)">kind routing does nothing</strong> — kind_only equals stock everywhere.
-        <strong style="color:var(--ink)">intent routing is weak and inconsistent</strong> — +9pp must-keep on average
-        across three drift sessions, but it reverses on one of them, and task-relevant retention doesn't move at all.
+        <strong style="color:var(--ink)">kind routing does nothing</strong> — kind_only equals stock exactly,
+        confirmed at full N. <strong style="color:var(--ink)">intent routing's effect shrank as we added
+        data</strong> — +9.0pp must-keep at N=3 campaigns down to +3.8pp at the full N=8 (5 of 8 positive,
+        3 of 8 negative). And <strong style="color:var(--ink)">task-relevant retention — the metric that
+        matters most — comes out slightly worse under routing</strong> (97% vs 99% for stock), not neutral.
       </p>
     </div>
-    <p class="note">Numbers are must-keep retention — Paritok's own training-time definition of content that must survive. It is the only axis the arms differ on; task-relevant retention saturates.</p>
+    <p class="note">Live solve-rate A/B was attempted (four separate recording attempts) and stopped:
+      Gemini's free-tier quota killed every one before completion. The result above is offline-only —
+      see <a href="https://github.com/Viktor-Nedev/Paritok_Hackathon/blob/master/docs/results.md">docs/results.md</a>
+      for the honest accounting of what that does and doesn't change.</p>
   </div>
 </section>
 
 <section>
   <div class="wrap col">
     <span class="eyebrow">Kept in view, not hidden</span>
-    <h2>Two numbers we retracted</h2>
-    <p>Twice we reported an encouraging result and then had to take it back when the data was cleaned up. Both are kept — the whole project is an argument for measuring instead of trusting the first number.</p>
+    <h2>Numbers we retracted</h2>
+    <p>Three times we reported an encouraging result and then had to take it back as more data came in. All three are kept — the whole project is an argument for measuring instead of trusting the first number, or the second one.</p>
     <div class="log">
       <div class="correction">
         <div class="was">"79% fewer tokens · 3.1× on a drift session"</div>
@@ -270,6 +277,10 @@
       <div class="correction">
         <div class="was">"1.61× on the drift session"</div>
         <div class="why">An artefact of a cache poisoned during a hosted-GPU outage — passthrough segments were cached as if compressed. Fixed, then re-run to a clean deterministic pass.</div>
+      </div>
+      <div class="correction">
+        <div class="was">"+9pp must-keep retention at N=3 — a modest but real win"</div>
+        <div class="why">Not fabricated, just didn't hold: +9.0pp → +6.8pp → +5.3pp → +3.8pp as campaigns grew from 3 to the full pre-registered 8, while task-relevant retention turned out slightly negative once all 8 were in.</div>
       </div>
     </div>
   </div>
@@ -306,8 +317,8 @@ python -m segpilot.<span class="p">probe</span> --all
 python -m segpilot.replay.<span class="p">harness</span> --all --suffix __raw \
   --arms stock,kind_only,intent_only,segpilot,segpilot+guard
 
-<span class="c"># regenerate the report + Pareto</span>
-python -m segpilot.replay.<span class="p">report</span> --out examples/reports/</pre>
+<span class="c"># regenerate the report + this site's data</span>
+python -m segpilot.replay.<span class="p">report</span> --out examples/reports/ --json</pre>
   </div>
 </section>
 

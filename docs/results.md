@@ -177,6 +177,49 @@ first encouraging number, and don't stop at the second one either.
 
 ---
 
+## Live confirmation: attempted, not completed
+
+The obvious next step for this result is live solve-rate A/B — do the arms'
+compression differences actually change whether the agent finishes the task,
+not just how it scores on offline retention metrics. We attempted this and
+stopped.
+
+Four separate live-recording attempts across two days (2026-07-28/29), each
+targeting a single arm of a single campaign, were killed by Gemini's free-tier
+rate limit before completing — the furthest any got was 5 turns into a
+~10-turn task. The quota's actual behaviour did not match the roughly
+"20 requests/day" we inferred from the error messages while recording
+reference sessions: attempts on a fresh day sometimes failed on the *second*
+call. Live recording interleaves real compression calls with agent turns in a
+way reference recording does not, and evidently costs more of whatever the
+binding limit actually is.
+
+We made the call to stop rather than keep spending days on an approach that
+was not converging, and lock in the complete, pre-registered offline result
+above as final. Two honest caveats follow from that:
+
+- **The 8-campaign result is offline-only.** It measures compression
+  quality (must-keep and task-relevant retention against ground truth), not
+  whether an agent actually finishes tasks faster or more often under one arm
+  than another. We believe the direction (no reliable benefit, `kind` inert,
+  `intent` weak) is unlikely to reverse in a live setting given how consistent
+  it was getting across offline sample sizes, but we did not verify it.
+- **The adaptive controller (`segpilot/policy/adaptive.py`) is built and
+  unit-tested, not empirically validated.** Its escalate/back-off logic,
+  the `expand_context` regret signal, and the shadow store it depends on all
+  have passing tests against synthetic scenarios (see `tests/test_adaptive.py`,
+  `tests/test_ruff_adaptive.py`), and the wiring through `agent/ruff.py` is
+  complete and ready to run — but no live session has exercised it. Given the
+  offline result above, an adaptive layer that decides *when* to route would
+  need its own live evidence to be worth trusting, and we do not have that
+  evidence.
+
+Both are accurately described as "built, not proven" rather than "proven to
+work" or "abandoned" — the code and tests exist and are real engineering
+artefacts; the empirical claim they would support does not.
+
+---
+
 ## What stands
 
 Independent of the null headline, the following are solid and reproducible:
@@ -196,6 +239,9 @@ Independent of the null headline, the following are solid and reproducible:
 - **A live site** ([segpilot.onrender.com](https://segpilot.onrender.com/))
   serving this data directly from the harness, plus a real compression demo
   anyone can run against their own text.
+- **An adaptive regret-loop controller**, built and unit-tested, ready to run
+  but not live-validated (see "Live confirmation" above) — a real, honestly
+  labelled engineering artefact, not a claimed result.
 
 ## Reproduce
 
@@ -206,7 +252,6 @@ python -m segpilot.replay.report --out examples/reports/ --json
 ```
 
 Sample size: 8 campaign + 4 single-bug sessions, one recording each, all
-pre-registered before recording. Live solve-rate A/B is a separate,
-in-progress track — see the project's live status for current results; with an
-offline signal this weak, small-N solve-rate differences would mostly be
-noise, so we are running it at reduced scope rather than skipping it.
+pre-registered before recording. Live solve-rate A/B was attempted and not
+completed — see "Live confirmation" above for why, and what that does and
+does not change about the conclusion.
