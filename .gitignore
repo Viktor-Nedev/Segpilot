@@ -7,3 +7,4 @@ compress_trace.jsonl
 segpilot_cache.db
 examples/sessions/*.jsonl
 .pytest_cache/
+docs/submission/
